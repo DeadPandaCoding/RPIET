@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { useData } from '../store/DataContext'
 import { Button, Input } from '../components/ui'
+import { EMAIL_RE } from '../lib/validate'
 import { getLockoutState } from '../lib/rateLimit'
 
 type AuthMode = 'signin' | 'signup'
@@ -64,6 +65,25 @@ export function SignIn() {
     const em = email.trim()
     if (!em || !password) {
       setError('Enter your email and password.')
+      return
+    }
+    if (em.length > 254) {
+      setError('Email is too long (max 254 characters).')
+      return
+    }
+    // Lenient sanity check on sign-in so existing accounts are never locked
+    // out by a stricter rule added later.
+    if (!em.includes('@') || /\s/.test(em)) {
+      setError('Enter a valid email address.')
+      return
+    }
+    // Strict format only when creating a NEW account.
+    if (mode === 'signup' && !EMAIL_RE.test(em)) {
+      setError('Enter a valid email address.')
+      return
+    }
+    if (password.length > 128) {
+      setError('Password is too long (max 128 characters).')
       return
     }
     if (mode === 'signup' && password.length < 6) {

@@ -1,6 +1,7 @@
 import type { Dataset, StorageMode, TableName } from './types'
 import { getSupabase } from './supabase'
 import { getSession } from './auth'
+import { validatePatch, validateReceiptFile, validateRow } from './validate'
 import {
   buildSeedDataset,
   localInsert,
@@ -117,18 +118,20 @@ type Row = Dataset[TableName][number]
 type NewRow = Omit<Row, 'id' | 'created_at'>
 
 export async function insertRow(table: TableName, row: NewRow): Promise<Row> {
+  // Central gate: sanitize + reject oversized/malformed input before any write.
+  const clean = validateRow(table, row as Record<string, unknown>) as NewRow
   const sb = getSupabase()
   if (sb) {
     const { data, error } = await sb
       .from(table)
-      .insert(row as Record<string, unknown>)
+      .insert(clean as Record<string, unknown>)
       .select()
       .single()
     if (error) throw new Error(error.message)
     return data as Row
   }
   const created = {
-    ...row,
+    ...clean,
     id: crypto.randomUUID(),
     created_at: new Date().toISOString(),
   } as Row
@@ -140,16 +143,18 @@ export async function updateRow(
   id: string,
   patch: Partial<Row>,
 ): Promise<void> {
+  // Central gate: sanitize + reject oversized/malformed patches before writing.
+  const clean = validatePatch(table, patch as Record<string, unknown>) as Partial<Row>
   const sb = getSupabase()
   if (sb) {
     const { error } = await sb
       .from(table)
-      .update(patch as Record<string, unknown>)
+      .update(clean as Record<string, unknown>)
       .eq('id', id)
     if (error) throw new Error(error.message)
     return
   }
-  localUpdate(table, id, patch)
+  localUpdate(table, id, clean)
 }
 
 export async function removeRow(table: TableName, id: string): Promise<void> {
@@ -193,6 +198,8 @@ export async function removeRow(table: TableName, id: string): Promise<void> {
  * survives refreshes.
  */
 export async function uploadReceipt(file: File): Promise<string> {
+  // Central gate: reject empty, oversized, or non-image/PDF files.
+  validateReceiptFile(file)
   const sb = getSupabase()
   if (sb) {
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')

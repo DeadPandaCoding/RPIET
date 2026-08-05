@@ -84,6 +84,10 @@ export function Settings() {
       toast('Enter a password of at least 4 characters', 'error')
       return
     }
+    if (password.length > 128) {
+      toast('Backup password is too long (max 128 characters)', 'error')
+      return
+    }
     setBusy('backup')
     try {
       const blob = await encryptBackup(dataset, password)
