@@ -40,7 +40,7 @@ for (const t of tables) {
 }
 
 if (missing > 0) {
-  console.log(`\n${missing} table(s) missing. Run supabase/schema.sql in the SQL Editor:\n  https://supabase.com/dashboard/project/duddziumwdgxcaztciig/sql`)
+  console.log(`\n${missing} table(s) missing. Run supabase/schema.sql in the SQL Editor:\n  https://supabase.com/dashboard/project/YOUR-PROJECT-REF/sql`)
   process.exit(0)
 }
 
