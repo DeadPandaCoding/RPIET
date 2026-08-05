@@ -367,20 +367,30 @@ export function Settings() {
         open={confirmRestore}
         onClose={() => setConfirmRestore(false)}
         onConfirm={async () => {
-          if (!pendingRestore) return
+          const ds = pendingRestore
+          setPendingRestore(null)
+          if (!ds) return
+          setBusy('restore')
           try {
-            await restore(pendingRestore)
+            await restore(ds)
             toast('Backup restored successfully', 'success')
           } catch (err) {
             toast(err instanceof Error ? err.message : 'Restore failed', 'error')
+          } finally {
+            setBusy(null)
           }
+        }}
+        onClose={() => {
+          setConfirmRestore(false)
+          setPendingRestore(null)
         }}
         title="Restore this backup?"
         message={
           <>
             This will <b>replace all current data</b>{' '}
             {supabase ? 'in your Supabase project' : 'stored in this browser'} with the contents
-            of the backup file. This cannot be undone.
+            of the backup file. This cannot be undone. Consider downloading a fresh backup
+            first so you can recover if anything goes wrong.
           </>
         }
         confirmLabel="Restore data"

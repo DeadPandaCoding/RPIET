@@ -284,6 +284,8 @@ export async function restoreData(dataset: Dataset): Promise<void> {
   const sb = getSupabase()
   if (!sb) {
     saveWholeDataset(dataset)
+    // Prevent the local auto-seed from overwriting a freshly restored dataset.
+    markSeeded()
     return
   }
   for (const table of ['incomes', 'expenses', 'tenants', 'units', 'properties'] as TableName[]) {

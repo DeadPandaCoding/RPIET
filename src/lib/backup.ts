@@ -97,5 +97,17 @@ export async function decryptBackup(blob: Blob, password: string): Promise<Datas
   if (envelope.format !== 'propertyledger-backup' || envelope.version !== BACKUP_VERSION) {
     throw new Error('This file is not a valid PropertyLedger backup.')
   }
+  const ds = envelope.dataset
+  if (
+    !ds ||
+    typeof ds !== 'object' ||
+    !Array.isArray(ds.properties) ||
+    !Array.isArray(ds.units) ||
+    !Array.isArray(ds.tenants) ||
+    !Array.isArray(ds.incomes) ||
+    !Array.isArray(ds.expenses)
+  ) {
+    throw new Error('This backup does not contain valid PropertyLedger data.')
+  }
   return envelope.dataset
 }
