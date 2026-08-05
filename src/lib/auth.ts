@@ -47,3 +47,20 @@ export async function signOut() {
   const sb = requireClient()
   await sb.auth.signOut()
 }
+
+/**
+ * Revokes EVERY session for the user server-side (this device included).
+ * The user must sign in again on every device.
+ */
+export async function signOutEverywhere() {
+  const sb = requireClient()
+  await sb.auth.signOut({ scope: 'global' })
+}
+
+/**
+ * Revokes all OTHER sessions server-side while keeping this device signed in.
+ */
+export async function signOutOtherDevices() {
+  const sb = requireClient()
+  await sb.auth.signOut({ scope: 'others' })
+}

@@ -1,15 +1,17 @@
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react'
 import {
   Cloud,
   Database,
   Download,
   FileCode2,
   KeyRound,
+  Laptop,
   Lock,
   LogOut,
   RefreshCw,
   Server,
   ShieldCheck,
+  Smartphone,
   Sparkles,
   Trash2,
   Upload,
@@ -19,12 +21,31 @@ import { useData } from '../store/DataContext'
 import { useToast } from '../store/toast'
 import { formatNumber } from '../lib/format'
 import { decryptBackup, encryptBackup } from '../lib/backup'
+import { AUTO_LOCK_OPTIONS, getAutoLockMinutes, setAutoLockMinutes } from '../lib/prefs'
+import {
+  deviceLabel,
+  fetchActiveSessions,
+  revokeSession,
+  timeAgo,
+  type SessionInfo,
+} from '../lib/sessions'
 import type { Dataset } from '../lib/types'
-import { Badge, Button, Card, ConfirmDialog, Field, Input } from '../components/ui'
+import { Badge, Button, Card, ConfirmDialog, Field, Input, Select } from '../components/ui'
 
 export function Settings() {
-  const { connection, dataset, seedDemo, clearAll, refresh, mode, user, signOut, restore } =
-    useData()
+  const {
+    connection,
+    dataset,
+    seedDemo,
+    clearAll,
+    refresh,
+    mode,
+    user,
+    signOut,
+    signOutEverywhere,
+    signOutOtherDevices,
+    restore,
+  } = useData()
   const { toast } = useToast()
   const [testing, setTesting] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
@@ -33,6 +54,14 @@ export function Settings() {
   const [busy, setBusy] = useState<'backup' | 'restore' | null>(null)
   const [pendingRestore, setPendingRestore] = useState<Dataset | null>(null)
   const [confirmRestore, setConfirmRestore] = useState(false)
+  const [autoLock, setAutoLock] = useState<number>(getAutoLockMinutes)
+  const [sessions, setSessions] = useState<SessionInfo[] | null>(null)
+  const [sessionsError, setSessionsError] = useState<string | null>(null)
+  const [sessionsLoading, setSessionsLoading] = useState(false)
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
+  const [revoking, setRevoking] = useState<string | null>(null)
+  const [signingOutOthers, setSigningOutOthers] = useState(false)
+  const [confirmEverywhere, setConfirmEverywhere] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const supabase = mode === 'supabase'
@@ -46,6 +75,61 @@ export function Settings() {
       toast('Connection check failed', 'error')
     } finally {
       setTesting(false)
+    }
+  }
+
+  const loadSessions = useCallback(async () => {
+    setSessionsLoading(true)
+    try {
+      const result = await fetchActiveSessions()
+      setSessions(result.ok ? result.sessions : [])
+      setCurrentSessionId(result.currentSessionId)
+      setSessionsError(result.ok ? null : result.error ?? 'Could not load sessions.')
+    } catch (err) {
+      setSessions([])
+      setSessionsError(err instanceof Error ? err.message : 'Could not load sessions.')
+    } finally {
+      setSessionsLoading(false)
+    }
+  }, [])
+
+  // Load the session list whenever the Settings page opens (Supabase mode).
+  useEffect(() => {
+    if (mode === 'supabase') void loadSessions()
+  }, [mode, loadSessions])
+
+  const runSignOutOthers = async () => {
+    setSigningOutOthers(true)
+    try {
+      await signOutOtherDevices()
+      toast('Signed out on all other devices', 'success')
+      await loadSessions()
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to sign out other devices', 'error')
+    } finally {
+      setSigningOutOthers(false)
+    }
+  }
+
+  const runSignOutEverywhere = async () => {
+    try {
+      await signOutEverywhere()
+      toast('Signed out everywhere — sign in again to continue', 'success')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to sign out everywhere', 'error')
+    }
+  }
+
+  const runRevoke = async (sid: string) => {
+    setRevoking(sid)
+    try {
+      await revokeSession(sid)
+      toast('That device has been signed out', 'success')
+      await loadSessions()
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Failed to revoke session', 'error')
+    } finally {
+      setRevoking(null)
     }
   }
 
@@ -162,6 +246,116 @@ export function Settings() {
             from everyone else by Row Level Security. Receipts are stored in a private bucket and
             served through time-limited signed URLs.
           </p>
+        </Card>
+      )}
+
+      {/* Devices & sessions */}
+      {supabase && (
+        <Card
+          title="Devices & Sessions"
+          subtitle="See where you're signed in, sign out remotely, and set auto-lock"
+        >
+          <div className="flex flex-wrap items-end gap-4">
+            <Field
+              label="Auto sign-out after inactivity"
+              hint="Ends your session automatically after this long without activity. A 30-second warning gives you a chance to stay signed in."
+              className="min-w-56 flex-1"
+            >
+              <Select
+                value={String(autoLock)}
+                onChange={(e) => {
+                  const v = Number(e.target.value)
+                  setAutoLock(v)
+                  setAutoLockMinutes(v)
+                }}
+              >
+                {AUTO_LOCK_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="secondary"
+                onClick={() => void runSignOutOthers()}
+                disabled={signingOutOthers || sessionsLoading}
+              >
+                <LogOut className="size-3.5" /> Sign out other devices
+              </Button>
+              <Button variant="danger" onClick={() => setConfirmEverywhere(true)}>
+                <LogOut className="size-3.5" /> Sign out everywhere
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <div className="mb-2 flex items-center justify-between">
+              <h4 className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                Active sessions
+              </h4>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => void loadSessions()}
+                disabled={sessionsLoading}
+              >
+                <RefreshCw className={`size-3.5 ${sessionsLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
+            {sessionsError && sessions && sessions.length > 0 && (
+              <p className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                Refresh failed: {sessionsError}
+              </p>
+            )}
+
+            {sessionsLoading && sessions === null ? (
+              <p className="py-6 text-center text-sm text-slate-400">Loading sessions…</p>
+            ) : sessionsError && sessions?.length === 0 ? (
+              <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700">
+                {sessionsError}
+              </p>
+            ) : sessions && sessions.length > 0 ? (
+              <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+                {sessions.map((s) => {
+                  const isCurrent = s.id === currentSessionId
+                  const mobile = /mobile|iphone|ipad|android/i.test(s.userAgent ?? '')
+                  return (
+                    <li key={s.id} className="flex items-center gap-3 px-4 py-3">
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                        {mobile ? <Smartphone className="size-4.5" /> : <Laptop className="size-4.5" />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-700">
+                          <span className="truncate">{deviceLabel(s.userAgent)}</span>
+                          {isCurrent && <Badge color="emerald">This device</Badge>}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {s.ip ? `${s.ip} · ` : ''}active {timeAgo(s.updatedAt)}
+                        </p>
+                      </div>
+                      {!isCurrent && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={revoking === s.id}
+                          onClick={() => void runRevoke(s.id)}
+                        >
+                          {revoking === s.id ? 'Revoking…' : 'Revoke'}
+                        </Button>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : (
+              <p className="py-6 text-center text-sm text-slate-400">
+                No active sessions found.
+              </p>
+            )}
+          </div>
         </Card>
       )}
 
@@ -397,6 +591,21 @@ export function Settings() {
           </>
         }
         confirmLabel="Restore data"
+      />
+
+      <ConfirmDialog
+        open={confirmEverywhere}
+        onClose={() => setConfirmEverywhere(false)}
+        onConfirm={() => void runSignOutEverywhere()}
+        title="Sign out everywhere?"
+        message={
+          <>
+            This revokes your session on <b>every device</b>, including this one. You'll need
+            to sign in again on each device. Any unsaved work on other devices is not affected
+            (data is already saved), but you'll be signed out here immediately.
+          </>
+        }
+        confirmLabel="Sign out everywhere"
       />
 
       <ConfirmDialog

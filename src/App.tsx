@@ -3,6 +3,7 @@ import { Building2 } from 'lucide-react'
 import { DataProvider, useData } from './store/DataContext'
 import { ToastProvider } from './store/toast'
 import { Layout, type PageKey } from './components/Layout'
+import { AutoLock } from './components/AutoLock'
 import { SignIn } from './pages/SignIn'
 import { Dashboard } from './pages/Dashboard'
 import { Properties } from './pages/Properties'
@@ -36,20 +37,24 @@ function Shell() {
   if (mode === 'supabase' && !user) return <SignIn />
 
   return (
-    <Layout page={page} onNavigate={setPage}>
-      {error && (
-        <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          <b>Something went wrong:</b> {error}
-        </div>
-      )}
-      {page === 'dashboard' && <Dashboard onNavigate={setPage} />}
-      {page === 'properties' && <Properties />}
-      {page === 'tenants' && <Tenants />}
-      {page === 'incomes' && <Incomes />}
-      {page === 'expenses' && <Expenses />}
-      {page === 'reports' && <Reports />}
-      {page === 'settings' && <Settings />}
-    </Layout>
+    <>
+      <Layout page={page} onNavigate={setPage}>
+        {error && (
+          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            <b>Something went wrong:</b> {error}
+          </div>
+        )}
+        {page === 'dashboard' && <Dashboard onNavigate={setPage} />}
+        {page === 'properties' && <Properties />}
+        {page === 'tenants' && <Tenants />}
+        {page === 'incomes' && <Incomes />}
+        {page === 'expenses' && <Expenses />}
+        {page === 'reports' && <Reports />}
+        {page === 'settings' && <Settings />}
+      </Layout>
+      {/* Auto-lock overlay: active only while signed in to Supabase */}
+      <AutoLock />
+    </>
   )
 }
 

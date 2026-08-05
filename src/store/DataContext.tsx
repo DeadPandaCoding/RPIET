@@ -39,6 +39,8 @@ import {
   onAuthStateChange,
   signInWithPassword,
   signOut as authSignOut,
+  signOutEverywhere as authSignOutEverywhere,
+  signOutOtherDevices as authSignOutOtherDevices,
   signUpWithEmail,
 } from '../lib/auth'
 import { getLockoutState, recordFailure, recordSuccess } from '../lib/rateLimit'
@@ -84,6 +86,8 @@ export interface DataContextValue {
   signIn: (email: string, password: string, remember: boolean) => Promise<void>
   signUp: (email: string, password: string, remember: boolean) => Promise<{ needsConfirmation: boolean }>
   signOut: () => Promise<void>
+  signOutEverywhere: () => Promise<void>
+  signOutOtherDevices: () => Promise<void>
 
   // Receipts
   receiptUrl: (url: string | null | undefined) => string | null
@@ -304,6 +308,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await authSignOut()
   }, [])
 
+  const signOutEverywhere = useCallback(async () => {
+    // Revokes every session server-side; also forgets the local preference.
+    setRemembered(false)
+    await authSignOutEverywhere()
+  }, [])
+
+  const signOutOtherDevices = useCallback(async () => {
+    await authSignOutOtherDevices()
+  }, [])
+
   // ---- CRUD ----------------------------------------------------------------
   const create = useCallback(
     async <T extends TableName>(table: T, row: NewRowOf<T>) => {
@@ -414,6 +428,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     signIn,
     signUp,
     signOut,
+    signOutEverywhere,
+    signOutOtherDevices,
     receiptUrl,
     create,
     update,
