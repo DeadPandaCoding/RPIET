@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import {
   Building2,
   CheckCircle2,
@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { useData } from '../store/DataContext'
 import { Button, Input } from '../components/ui'
+import { getLockoutState } from '../lib/rateLimit'
 
 type AuthMode = 'signin' | 'signup'
 
@@ -22,6 +23,33 @@ export function SignIn() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmed, setConfirmed] = useState(false)
+  const [, setTick] = useState(0)
+
+  const lock = getLockoutState(email)
+  const isLocked = lock.locked
+
+  // Live countdown while the current email is locked out. Depends on
+  // isLocked so the interval also starts when the 5th failed attempt locks
+  // the account mid-session (not only on mount / email change).
+  useEffect(() => {
+    let id: number | undefined
+    const check = () => {
+      if (!getLockoutState(email).locked) {
+        if (id) window.clearInterval(id)
+        return
+      }
+      setTick((t) => t + 1)
+    }
+    if (isLocked) id = window.setInterval(check, 1000)
+    return () => {
+      if (id) window.clearInterval(id)
+    }
+  }, [email, isLocked])
+
+  const formatCountdown = (ms: number) => {
+    const total = Math.max(0, Math.ceil(ms / 1000))
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
+  }
 
   const switchMode = (next: AuthMode) => {
     setMode(next)
@@ -152,13 +180,29 @@ export function SignIn() {
                   </div>
                 </label>
 
-                {error && (
-                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                    {error}
+                {isLocked ? (
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+                    Too many failed attempts. Try again in{' '}
+                    <span className="tabular-nums">{formatCountdown(lock.retryInMs)}</span>.
                   </div>
+                ) : (
+                  <>
+                    {error && (
+                      <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                        {error}
+                      </div>
+                    )}
+                    {lock.remainingAttempts <= 2 && (
+                      <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                        {lock.remainingAttempts} attempt
+                        {lock.remainingAttempts === 1 ? '' : 's'} remaining before a temporary
+                        lockout.
+                      </div>
+                    )}
+                  </>
                 )}
 
-                <Button type="submit" size="lg" className="w-full" disabled={submitting}>
+                <Button type="submit" size="lg" className="w-full" disabled={submitting || isLocked}>
                   {submitting ? (
                     <span className="flex items-center gap-2">
                       <span className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />

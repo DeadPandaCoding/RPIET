@@ -41,6 +41,7 @@ import {
   signOut as authSignOut,
   signUpWithEmail,
 } from '../lib/auth'
+import { getLockoutState, recordFailure, recordSuccess } from '../lib/rateLimit'
 
 type RowOf<T extends TableName> = Dataset[T][number]
 type NewRowOf<T extends TableName> = Omit<RowOf<T>, 'id' | 'created_at'>
@@ -250,16 +251,39 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // ---- Auth actions --------------------------------------------------------
   const signIn = useCallback(async (email: string, password: string) => {
+    // Reject before hitting Supabase while this email is locked out.
+    const lock = getLockoutState(email)
+    if (lock.locked) {
+      const mins = Math.ceil(lock.retryInMs / 60000)
+      throw new Error(
+        `Too many failed attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'}.`,
+      )
+    }
     const { error } = await signInWithPassword(email, password)
-    if (error) throw new Error(error.message)
+    if (error) {
+      recordFailure(email)
+      throw new Error(error.message)
+    }
+    recordSuccess(email)
   }, [])
 
   const signUp = useCallback(
     async (email: string, password: string): Promise<{ needsConfirmation: boolean }> => {
+      const lock = getLockoutState(email)
+      if (lock.locked) {
+        const mins = Math.ceil(lock.retryInMs / 60000)
+        throw new Error(
+          `Too many failed attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'}.`,
+        )
+      }
       const { data, error } = await signUpWithEmail(email, password)
-      if (error) throw new Error(error.message)
+      if (error) {
+        recordFailure(email)
+        throw new Error(error.message)
+      }
       // With email confirmation enabled, no session is returned until the
       // user clicks the confirmation link in their inbox.
+      recordSuccess(email)
       return { needsConfirmation: !data.session }
     },
     [],
