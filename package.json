@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "smoke": "npx tsx test/smoke.ts",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "scan:secrets": "node scripts/scan-secrets.mjs",
+    "prepare": "node scripts/install-hooks.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.0",

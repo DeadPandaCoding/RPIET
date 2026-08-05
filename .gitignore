@@ -17,6 +17,17 @@ dist-ssr
 .env.*
 !.env.example
 
+# Private keys / credential bundles
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.jks
+id_rsa*
+*.p8
+*.der
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
