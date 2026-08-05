@@ -365,7 +365,6 @@ export function Settings() {
 
       <ConfirmDialog
         open={confirmRestore}
-        onClose={() => setConfirmRestore(false)}
         onConfirm={async () => {
           const ds = pendingRestore
           setPendingRestore(null)
