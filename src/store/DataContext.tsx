@@ -4,9 +4,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
+import type { User } from '@supabase/supabase-js'
 import type {
   Dataset,
   Expense,
@@ -19,6 +21,7 @@ import type {
 } from '../lib/types'
 import {
   clearAllData,
+  getReceiptSignedUrl,
   getStorageMode,
   insertRow,
   loadDataset,
@@ -30,9 +33,28 @@ import {
   uploadReceipt as uploadReceiptApi,
 } from '../lib/api'
 import { loadTable } from '../lib/storage'
+import { getSupabase } from '../lib/supabase'
+import {
+  onAuthStateChange,
+  signInWithPassword,
+  signOut as authSignOut,
+  signUpWithEmail,
+} from '../lib/auth'
 
 type RowOf<T extends TableName> = Dataset[T][number]
 type NewRowOf<T extends TableName> = Omit<RowOf<T>, 'id' | 'created_at'>
+
+const EMPTY_DATASET: Dataset = {
+  properties: [],
+  units: [],
+  tenants: [],
+  incomes: [],
+  expenses: [],
+}
+
+const SIGNED_URL_TTL = 7 * 24 * 60 * 60 * 1000 // 7 days
+// Re-sign before the previous signature expires.
+const RE_SIGN_BEFORE = 6 * 24 * 60 * 60 * 1000
 
 export interface DataContextValue {
   mode: StorageMode
@@ -41,6 +63,16 @@ export interface DataContextValue {
   error: string | null
   connection: ConnectionStatus | null
   refresh: () => Promise<void>
+
+  // Auth (Supabase mode only)
+  user: User | null
+  authLoading: boolean
+  signIn: (email: string, password: string) => Promise<void>
+  signUp: (email: string, password: string) => Promise<{ needsConfirmation: boolean }>
+  signOut: () => Promise<void>
+
+  // Receipts
+  receiptUrl: (url: string | null | undefined) => string | null
 
   // CRUD
   create: <T extends TableName>(table: T, row: NewRowOf<T>) => Promise<RowOf<T>>
@@ -63,37 +95,116 @@ export interface DataContextValue {
 
 const DataContext = createContext<DataContextValue | null>(null)
 
+const isLegacyUrl = (url: string) =>
+  url.startsWith('data:') || /^https?:\/\//.test(url)
+
 export function DataProvider({ children }: { children: ReactNode }) {
-  const [dataset, setDataset] = useState<Dataset>({
-    properties: [],
-    units: [],
-    tenants: [],
-    incomes: [],
-    expenses: [],
-  })
+  const [dataset, setDataset] = useState<Dataset>(EMPTY_DATASET)
   const [mode, setMode] = useState<StorageMode>(() => getStorageMode())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [connection, setConnection] = useState<ConnectionStatus | null>(null)
 
+  // ---- Auth state ----------------------------------------------------------
+  const [user, setUser] = useState<User | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
+  const userRef = useRef<User | null>(null)
+  // Bumps whenever a signed receipt URL resolves, so receipt links re-render.
+  const [receiptVersion, setReceiptVersion] = useState(0)
+  const receiptCache = useRef(new Map<string, { url: string; expiresAt: number }>())
+
+  useEffect(() => {
+    userRef.current = user
+  }, [user])
+
+  useEffect(() => {
+    const sb = getSupabase()
+    if (!sb) {
+      setAuthLoading(false)
+      return
+    }
+    let active = true
+    void sb.auth.getSession().then(({ data }) => {
+      if (!active) return
+      setUser(data.session?.user ?? null)
+      setAuthLoading(false)
+    })
+    const sub = onAuthStateChange((event, session) => {
+      if (!active) return
+      const next = session?.user ?? null
+      // Keep the same user reference so token refreshes don't retrigger reloads.
+      setUser((prev) =>
+        prev?.id === next?.id && prev?.email === next?.email ? prev : next,
+      )
+      // Show the loading screen while the dataset re-syncs after an auth change.
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        setLoading(true)
+      }
+    })
+    return () => {
+      active = false
+      sub?.unsubscribe()
+    }
+  }, [])
+
+  // ---- Data loading --------------------------------------------------------
+  const cacheReceiptUrls = useCallback((ds: Dataset) => {
+    const sb = getSupabase()
+    if (!sb) return
+    const paths = new Set<string>()
+    for (const e of ds.expenses) {
+      const r = e.receipt_url
+      if (r && !isLegacyUrl(r)) paths.add(r)
+    }
+    const now = Date.now()
+    for (const p of paths) {
+      const cached = receiptCache.current.get(p)
+      // Skip only while the current signature is comfortably valid.
+      if (cached && now < cached.expiresAt - RE_SIGN_BEFORE) continue
+      void getReceiptSignedUrl(p).then((url) => {
+        if (!url) return
+        const current = receiptCache.current.get(p)
+        const expiresAt = Date.now() + SIGNED_URL_TTL
+        if (!current || current.url !== url) {
+          receiptCache.current.set(p, { url, expiresAt })
+          setReceiptVersion((v) => v + 1)
+        }
+      })
+    }
+  }, [])
+
   const refresh = useCallback(async () => {
     try {
       setError(null)
+      // In Supabase mode the database is owner-scoped via RLS; without a
+      // session there is nothing to load (the sign-in screen handles that).
+      if (getStorageMode() === 'supabase' && !userRef.current) {
+        setDataset(EMPTY_DATASET)
+        setMode('supabase')
+        setConnection(null)
+        return
+      }
       const { dataset: ds, mode: m } = await loadDataset()
       setDataset(ds)
       setMode(m)
       const conn = await testConnection()
       setConnection(conn)
+      if (getStorageMode() === 'supabase') cacheReceiptUrls(ds)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [cacheReceiptUrls])
 
   useEffect(() => {
     void refresh()
   }, [refresh])
+
+  // Reload data when the auth session appears or disappears.
+  useEffect(() => {
+    if (getStorageMode() === 'supabase' && !authLoading) void refresh()
+  }, [user, authLoading, refresh])
 
   const reloadTable = useCallback((table: TableName) => {
     setDataset((d) => {
@@ -103,6 +214,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  // ---- Auth actions --------------------------------------------------------
+  const signIn = useCallback(async (email: string, password: string) => {
+    const { error } = await signInWithPassword(email, password)
+    if (error) throw new Error(error.message)
+  }, [])
+
+  const signUp = useCallback(
+    async (email: string, password: string): Promise<{ needsConfirmation: boolean }> => {
+      const { data, error } = await signUpWithEmail(email, password)
+      if (error) throw new Error(error.message)
+      // With email confirmation enabled, no session is returned until the
+      // user clicks the confirmation link in their inbox.
+      return { needsConfirmation: !data.session }
+    },
+    [],
+  )
+
+  const signOut = useCallback(async () => {
+    await authSignOut()
+  }, [])
+
+  // ---- CRUD ----------------------------------------------------------------
   const create = useCallback(
     async <T extends TableName>(table: T, row: NewRowOf<T>) => {
       const created = (await insertRow(table, row as never)) as RowOf<T>
@@ -158,6 +291,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await refresh()
   }, [refresh])
 
+  // ---- Receipt resolution --------------------------------------------------
+  // Returns a displayable URL: data URLs (local mode) and legacy https URLs
+  // pass through; Supabase storage paths resolve to cached signed URLs.
+  const receiptUrl = useCallback((url: string | null | undefined): string | null => {
+    if (!url) return null
+    if (isLegacyUrl(url)) return url
+    const cached = receiptCache.current.get(url)
+    if (!cached || Date.now() > cached.expiresAt) return null
+    return cached.url
+  }, [])
+
   // ---- Lookup helpers ------------------------------------------------------
   const lookups = useMemo(() => {
     const propertyById = (id: string | null | undefined) =>
@@ -191,6 +335,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     error,
     connection,
     refresh,
+    user,
+    authLoading,
+    signIn,
+    signUp,
+    signOut,
+    receiptUrl,
     create,
     update,
     remove,
@@ -199,6 +349,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     clearAll,
     ...lookups,
   }
+  // receiptVersion is consumed here so the context value (and therefore all
+  // consumers) re-renders once signed receipt URLs resolve.
+  void receiptVersion
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>
 }

@@ -1,5 +1,6 @@
 import type { Dataset, StorageMode, TableName } from './types'
 import { getSupabase } from './supabase'
+import { getSession } from './auth'
 import {
   buildSeedDataset,
   localInsert,
@@ -185,19 +186,23 @@ export async function removeRow(table: TableName, id: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 /**
- * Uploads a receipt image. In Supabase mode the file is stored in the
- * `receipts` bucket and its public URL is returned. In local mode the file
- * is embedded as a data URL (kept under ~2.5MB) so it survives refreshes.
+ * Uploads a receipt image. In Supabase mode the file is stored in the private
+ * `receipts` bucket under the owner's <user-id>/ folder and the storage path
+ * is returned (resolved to a signed URL at render time via getReceiptSignedUrl).
+ * In local mode the file is embedded as a data URL (kept under ~2.5MB) so it
+ * survives refreshes.
  */
 export async function uploadReceipt(file: File): Promise<string> {
   const sb = getSupabase()
   if (sb) {
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-    const path = `${Date.now()}-${safeName}`
+    const session = await getSession()
+    // Owner-scoped storage: without a session the upload would be invisible.
+    if (!session) throw new Error('You must be signed in to upload receipts.')
+    const path = `${session.user.id}/${Date.now()}-${safeName}`
     const { error } = await sb.storage.from('receipts').upload(path, file)
     if (error) throw new Error(error.message)
-    const { data } = sb.storage.from('receipts').getPublicUrl(path)
-    return data.publicUrl
+    return path
   }
   if (file.size > 2.5 * 1024 * 1024) {
     throw new Error('Demo mode: receipts are embedded locally and must be under 2.5 MB. Connect Supabase for larger uploads.')
@@ -208,6 +213,25 @@ export async function uploadReceipt(file: File): Promise<string> {
     reader.onerror = () => reject(new Error('Could not read file'))
     reader.readAsDataURL(file)
   })
+}
+
+// ---------------------------------------------------------------------------
+// Receipt URL resolution
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolves a stored receipt path to a time-limited signed URL (7 days). The
+ * receipts bucket is private and owner-scoped, so public URLs are no longer
+ * usable. Returns null when the path cannot be signed.
+ */
+export async function getReceiptSignedUrl(path: string): Promise<string | null> {
+  const sb = getSupabase()
+  if (!sb) return null
+  const { data, error } = await sb.storage
+    .from('receipts')
+    .createSignedUrl(path, 60 * 60 * 24 * 7)
+  if (error || !data) return null
+  return data.signedUrl
 }
 
 // ---------------------------------------------------------------------------

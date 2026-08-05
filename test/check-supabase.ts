@@ -16,6 +16,13 @@ console.log('Project URL:', url)
 
 const sb = createClient(url, anonKey)
 
+const { data: sessionData } = await sb.auth.getSession()
+console.log(
+  sessionData.session
+    ? `Auth: signed in as ${sessionData.session.user.email}`
+    : 'Auth: no session — owner RLS hides all rows from anonymous clients',
+)
+
 const tables = ['properties', 'units', 'tenants', 'incomes', 'expenses']
 
 let missing = 0
@@ -25,7 +32,10 @@ for (const t of tables) {
     missing++
     console.log(`  ✗ ${t}: ${error.message}`)
   } else {
-    console.log(`  ✓ ${t}: readable (${data?.length ?? 0} rows fetched)`)
+    const n = data?.length ?? 0
+    console.log(
+      `  ✓ ${t}: readable (${n} row(s) fetched${n === 0 ? ' — 0 rows may mean owner RLS is hiding them' : ''})`,
+    )
   }
 }
 
@@ -43,9 +53,15 @@ const { data: inserted, error: insErr } = await sb
   .single()
 
 if (insErr) {
-  console.log(`  ✗ INSERT blocked: ${insErr.message} (RLS policies may be missing)`)
+  const msg = `${insErr.message}`
+  if (/row.?level security|permission denied|policy/i.test(msg)) {
+    console.log(`  ✓ INSERT blocked by RLS as expected (${msg})`)
+    console.log('    Per-user RLS is active — sign in with an account to read/write.')
+  } else {
+    console.log(`  ✗ INSERT failed: ${msg}`)
+  }
 } else {
-  console.log(`  ✓ INSERT allowed (id=${inserted?.id})`)
+  console.log(`  ✓ INSERT allowed (id=${inserted?.id}) — check that per-user policies are installed`)
   const { error: delErr } = await sb.from('properties').delete().eq('id', inserted!.id)
   console.log(delErr ? `  ✗ cleanup delete failed: ${delErr.message}` : '  ✓ probe row cleaned up')
 }

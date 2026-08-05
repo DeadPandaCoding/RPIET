@@ -3,6 +3,7 @@ import { Building2 } from 'lucide-react'
 import { DataProvider, useData } from './store/DataContext'
 import { ToastProvider } from './store/toast'
 import { Layout, type PageKey } from './components/Layout'
+import { SignIn } from './pages/SignIn'
 import { Dashboard } from './pages/Dashboard'
 import { Properties } from './pages/Properties'
 import { Tenants } from './pages/Tenants'
@@ -26,10 +27,13 @@ function LoadingScreen() {
 }
 
 function Shell() {
-  const { loading, error } = useData()
+  const { loading, authLoading, mode, user, error } = useData()
   const [page, setPage] = useState<PageKey>('dashboard')
 
-  if (loading) return <LoadingScreen />
+  if (loading || authLoading) return <LoadingScreen />
+
+  // Supabase mode requires a signed-in owner; the database is owner-scoped.
+  if (mode === 'supabase' && !user) return <SignIn />
 
   return (
     <Layout page={page} onNavigate={setPage}>

@@ -23,7 +23,7 @@ function ExpenseFormModal({
   onClose: () => void
   editing: Expense | null
 }) {
-  const { create, update, uploadReceipt } = useData()
+  const { create, update, uploadReceipt, receiptUrl } = useData()
   const { toast } = useToast()
   const fileRef = useRef<HTMLInputElement>(null)
   const [date, setDate] = useState('')
@@ -154,8 +154,8 @@ function ExpenseFormModal({
             )}
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-semibold text-slate-700">{receiptFileName(receipt)}</p>
-              {!isDataUrl(receipt) && (
-                <a href={receipt} target="_blank" rel="noreferrer" className="text-xs font-semibold text-indigo-600 hover:underline">
+              {!isDataUrl(receipt) && receiptUrl(receipt) && (
+                <a href={receiptUrl(receipt)!} target="_blank" rel="noreferrer" className="text-xs font-semibold text-indigo-600 hover:underline">
                   Open in new tab
                 </a>
               )}
@@ -189,7 +189,7 @@ function ExpenseFormModal({
 // ---------------------------------------------------------------------------
 
 export function Expenses() {
-  const { dataset, remove } = useData()
+  const { dataset, remove, receiptUrl } = useData()
   const { toast } = useToast()
   const [modal, setModal] = useState<{ open: boolean; editing: Expense | null }>({ open: false, editing: null })
   const [deleting, setDeleting] = useState<Expense | null>(null)
@@ -301,6 +301,7 @@ export function Expenses() {
                 {filtered.map((e) => {
                   const prop = dataset.properties.find((p) => p.id === e.property_id)
                   const unit = dataset.units.find((u) => u.id === e.unit_id)
+                  const resolvedReceipt = receiptUrl(e.receipt_url)
                   return (
                     <tr key={e.id} className="transition-colors hover:bg-slate-50/70">
                       <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatDate(e.date)}</td>
@@ -314,14 +315,18 @@ export function Expenses() {
                       <td className="whitespace-nowrap px-4 py-3 text-slate-600">{e.vendor || '—'}</td>
                       <td className="px-4 py-3">
                         {e.receipt_url ? (
-                          <a
-                            href={e.receipt_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline"
-                          >
-                            <Paperclip className="size-3.5" /> View
-                          </a>
+                          resolvedReceipt ? (
+                            <a
+                              href={resolvedReceipt}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:underline"
+                            >
+                              <Paperclip className="size-3.5" /> View
+                            </a>
+                          ) : (
+                            <span className="text-xs text-slate-400">…</span>
+                          )
                         ) : (
                           <span className="text-slate-300">—</span>
                         )}

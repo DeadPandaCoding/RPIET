@@ -4,10 +4,13 @@ import {
   Database,
   FileCode2,
   KeyRound,
+  LogOut,
   RefreshCw,
   Server,
+  ShieldCheck,
   Sparkles,
   Trash2,
+  UserRound,
 } from 'lucide-react'
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/toast'
@@ -15,7 +18,7 @@ import { formatNumber } from '../lib/format'
 import { Badge, Button, Card, ConfirmDialog } from '../components/ui'
 
 export function Settings() {
-  const { connection, dataset, seedDemo, clearAll, refresh, mode } = useData()
+  const { connection, dataset, seedDemo, clearAll, refresh, mode, user, signOut } = useData()
   const { toast } = useToast()
   const [testing, setTesting] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
@@ -55,8 +58,54 @@ export function Settings() {
     { label: 'Expense entries', value: dataset.expenses.length },
   ]
 
+  const signOutBtn = async () => {
+    try {
+      await signOut()
+      toast('Signed out', 'success')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Sign out failed', 'error')
+    }
+  }
+
   return (
     <div className="space-y-4">
+      {/* Account & security */}
+      {supabase && (
+        <Card
+          title="Account & Security"
+          subtitle="Signed in as the data owner — only you can read or modify your records"
+          actions={
+            <Button variant="secondary" size="sm" onClick={() => void signOutBtn()}>
+              <LogOut className="size-3.5" /> Sign out
+            </Button>
+          }
+        >
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm">
+              <UserRound className="size-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-base font-bold text-slate-800">{user?.email ?? 'Signed in'}</p>
+              <p className="text-xs text-slate-500">
+                Authenticated with Supabase Auth · user id{' '}
+                <span className="font-mono text-[11px]">{user?.id ?? '—'}</span>
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge color="emerald">
+                <ShieldCheck className="size-3" /> Owner-only RLS
+              </Badge>
+              <Badge color="emerald">Private receipts</Badge>
+            </div>
+          </div>
+          <p className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs leading-relaxed text-slate-500">
+            Every row is tagged with your <span className="font-mono">user_id</span> and hidden
+            from everyone else by Row Level Security. Receipts are stored in a private bucket and
+            served through time-limited signed URLs.
+          </p>
+        </Card>
+      )}
+
       {/* Connection status */}
       <Card
         title="Data Source"
@@ -108,15 +157,17 @@ export function Settings() {
                     supabase.com
                   </a>{' '}
                   and grab your project URL + anon key from{' '}
-                  <span className="font-mono text-xs">Project → Settings → API</span>.
+                  <span className="font-mono text-xs">Project → Settings → API</span>. Then enable
+                  the <b>Email</b> provider under{' '}
+                  <span className="font-mono text-xs">Authentication → Providers</span>.
                 </>,
                 <>
                   Run{' '}
                   <span className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[11px] text-emerald-300">
                     supabase/schema.sql
                   </span>{' '}
-                  in the Supabase SQL Editor. This creates all tables with Row Level
-                  Security and the receipts storage bucket.
+                  in the Supabase SQL Editor. This creates all tables with per-user Row Level
+                  Security, the private receipts bucket, and the auth setup.
                 </>,
                 <>
                   Copy{' '}
@@ -127,7 +178,8 @@ export function Settings() {
                   <span className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[11px] text-emerald-300">
                     .env
                   </span>
-                  , paste in your keys, then restart the dev server.
+                  , paste in your keys, then restart the dev server. Sign in with your new
+                  account — the app will ask for it on first open.
                 </>,
               ].map((step, i) => (
                 <li key={i} className="flex items-start gap-3 text-sm text-slate-600">
@@ -150,9 +202,9 @@ export function Settings() {
 
         {supabase && (
           <div className="mt-5 flex flex-wrap gap-2 text-xs text-slate-500">
-            <Badge color="emerald">Receipt uploads → Supabase Storage</Badge>
-            <Badge color="emerald">RLS enabled on all tables</Badge>
-            <Badge color="slate">Data synced across devices</Badge>
+            <Badge color="emerald">Receipts → private owner-scoped bucket</Badge>
+            <Badge color="emerald">Per-user RLS on all tables</Badge>
+            <Badge color="slate">Synced across devices</Badge>
           </div>
         )}
       </Card>

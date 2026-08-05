@@ -4,8 +4,8 @@ A clean, modern web app for managing multiple rental properties, units, and tena
 with income/expense tracking, dashboards, financial reports, and CSV/PDF exports.
 
 Built with **React 19 + TypeScript + Vite**, styled with **Tailwind CSS v4**, charts with
-**Recharts**, and backed by **Supabase (Postgres + RLS)** — with a local browser-storage
-demo mode so you can start immediately without any setup.
+**Recharts**, and backed by **Supabase (Auth + Postgres + per-user RLS)** — with a local
+browser-storage demo mode so you can start immediately without any setup.
 
 ## Features
 
@@ -35,8 +35,9 @@ your browser — no setup required. You can wipe or reload demo data anytime in 
    and **anon key** from *Project Settings → API*.
 2. Open the **SQL Editor** in the Supabase dashboard and run the contents of
    [`supabase/schema.sql`](supabase/schema.sql). This creates the `properties`, `units`,
-   `tenants`, `incomes`, and `expenses` tables with **Row Level Security enabled**, plus
-   the public `receipts` storage bucket used for expense receipt uploads.
+   `tenants`, `incomes`, and `expenses` tables with **Row Level Security** scoped to each
+   signed-in owner, plus a **private** `receipts` storage bucket used for expense receipt
+   uploads (served through signed URLs).
 3. Copy `.env.example` to `.env` and fill in your keys:
 
    ```
@@ -44,13 +45,14 @@ your browser — no setup required. You can wipe or reload demo data anytime in 
    VITE_SUPABASE_ANON_KEY=your-anon-key
    ```
 
-4. Restart the dev server. The sidebar will show **Supabase connected** and all data now
-   lives in your Postgres database, synced across devices.
+4. Restart the dev server. The sidebar will show **Supabase connected** and the app now
+   requires **sign-in (Supabase Auth, email + password)**. Every user sees and edits only
+   their own data — protected by per-user Row Level Security (`user_id = auth.uid()`).
 
-> **RLS note:** the shipped policies allow read/write via the anon key, matching this
-> single-user app. To switch to per-user ownership, add a `user_id` column defaulting to
-> `auth.uid()` on each table and replace the policies with `using (user_id = auth.uid())`.
-> The schema file contains the exact replacement snippet.
+> **Already have data?** Rows created before the upgrade have a `NULL user_id` and are
+> invisible until claimed. After creating your account, copy your user id (Settings →
+> Account & Security in the app, or Authentication → Users in Supabase) and run the
+> backfill `UPDATE` statements listed at the top of `supabase/schema.sql`.
 
 ## Project structure
 
