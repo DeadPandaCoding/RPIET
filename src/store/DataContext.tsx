@@ -136,20 +136,29 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return
     }
     let active = true
-    void sb.auth.getSession().then(({ data }) => {
-      if (!active) return
-      setUser(data.session?.user ?? null)
-      setAuthLoading(false)
-    })
+    void sb.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!active) return
+        setUser(data.session?.user ?? null)
+        setAuthLoading(false)
+      })
+      .catch(() => {
+        // Never leave the app on the loading screen if session lookup fails.
+        if (active) setAuthLoading(false)
+      })
     const sub = onAuthStateChange((event, session) => {
       if (!active) return
       const next = session?.user ?? null
-      // Keep the same user reference so token refreshes don't retrigger reloads.
-      setUser((prev) =>
-        prev?.id === next?.id && prev?.email === next?.email ? prev : next,
-      )
-      // Show the loading screen while the dataset re-syncs after an auth change.
-      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+      // Only treat this as a session change when the user actually changed.
+      // Supabase fires SIGNED_IN again when the tab regains focus (to re-sync
+      // the session); showing the loading screen there without a matching
+      // reload would leave the app stuck on "Loading your portfolio…" forever.
+      const prev = userRef.current
+      if (prev?.id !== next?.id || prev?.email !== next?.email) {
+        userRef.current = next
+        setUser(next)
+        // Show the loading screen while the dataset re-syncs after the change.
         setLoading(true)
       }
     })
