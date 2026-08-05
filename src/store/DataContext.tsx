@@ -56,6 +56,18 @@ const SIGNED_URL_TTL = 7 * 24 * 60 * 60 * 1000 // 7 days
 // Re-sign before the previous signature expires.
 const RE_SIGN_BEFORE = 6 * 24 * 60 * 60 * 1000
 
+// Supabase's Auth (GoTrue) and PostgREST services can briefly disagree on the
+// clock right after a token is minted — PostgREST rejects it with
+// "JWT issued at future" (PGRST303), which self-resolves within ~1-2s.
+// Retry quickly so the user never sees this transient error.
+const RETRY_DELAY_MS = 1500
+const RETRY_ATTEMPTS = 2
+
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+
+const isIssuedAtFutureError = (err: unknown) =>
+  /issued at future|PGRST303/i.test(err instanceof Error ? err.message : String(err))
+
 export interface DataContextValue {
   mode: StorageMode
   dataset: Dataset
@@ -184,12 +196,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setConnection(null)
         return
       }
-      const { dataset: ds, mode: m } = await loadDataset()
-      setDataset(ds)
-      setMode(m)
-      const conn = await testConnection()
-      setConnection(conn)
-      if (getStorageMode() === 'supabase') cacheReceiptUrls(ds)
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const { dataset: ds, mode: m } = await loadDataset()
+          setDataset(ds)
+          setMode(m)
+          const conn = await testConnection()
+          setConnection(conn)
+          if (getStorageMode() === 'supabase') cacheReceiptUrls(ds)
+          break
+        } catch (err) {
+          if (attempt < RETRY_ATTEMPTS && isIssuedAtFutureError(err)) {
+            await delay(RETRY_DELAY_MS)
+            continue
+          }
+          throw err
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
