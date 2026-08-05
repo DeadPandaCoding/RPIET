@@ -40,8 +40,10 @@ const NAV_ORDER: PageKey[] = ['dashboard', 'properties', 'tenants', 'incomes', '
 function Logo() {
   return (
     <div className="px-2">
-      <div className="flex items-center justify-center rounded-xl bg-plate px-3 py-3 shadow-sm">
-        <img src="/valora-logo.png" alt="Valora" className="h-10 w-auto" />
+      {/* The sidebar is always navy, so the ivory logo variant is used in
+          both themes — no white plate needed. */}
+      <div className="flex items-center justify-center px-3 py-3">
+        <img src="/valora-logo-dark.png" alt="Valora" className="h-10 w-auto" />
       </div>
       <div className="mt-2 text-center text-[10px] font-medium uppercase tracking-[0.3em] text-slate-400">
         Private Portfolio

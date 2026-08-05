@@ -9,7 +9,7 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import { useData } from '../store/DataContext'
-import { Button, Input, ThemeToggle } from '../components/ui'
+import { Button, Input } from '../components/ui'
 import { EMAIL_RE } from '../lib/validate'
 import { getLockoutState } from '../lib/rateLimit'
 
@@ -137,14 +137,13 @@ export function SignIn() {
       <div className="pointer-events-none absolute -left-32 -top-32 size-96 rounded-full bg-indigo-300/20 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -right-24 size-[28rem] rounded-full bg-violet-300/20 blur-3xl" />
       <div className="pointer-events-none absolute left-1/2 top-1/3 size-64 -translate-x-1/2 rounded-full bg-sky-200/25 blur-3xl" />
-      <ThemeToggle className="absolute right-4 top-4 rounded-xl border border-slate-200 bg-surface p-2.5 text-slate-500 shadow-sm transition-colors hover:text-slate-700 dark:border-slate-700 dark:text-slate-300 dark:hover:text-white" />
 
       <div className="relative w-full max-w-md">
         <h1 className="sr-only">Valora</h1>
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="rounded-2xl bg-plate px-4 py-3 shadow-sm">
-            <img src="/valora-logo.png" alt="" className="h-14 w-auto" />
-          </div>
+          {/* Navy logo on light, ivory logo on navy — no white plate. */}
+          <img src="/valora-logo.png" alt="" className="h-14 w-auto dark:hidden" />
+          <img src="/valora-logo-dark.png" alt="" className="hidden h-14 w-auto dark:block" />
           <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">Private Portfolio</p>
           <p className="mt-2 text-sm text-slate-500">Sign in to manage your rental portfolio</p>
         </div>

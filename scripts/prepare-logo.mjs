@@ -9,6 +9,11 @@
  *   3. Downscales to a display-friendly width (bilinear, alpha-aware)
  *   4. Re-encodes as an RGBA PNG
  *
+ * It emits TWO assets from the same keyed source:
+ *   - public/valora-logo.png        — the original navy logo (light surfaces)
+ *   - public/valora-logo-dark.png   — a warm-ivory silhouette (navy surfaces,
+ *     so dark mode needs no white logo plate)
+ *
  * Usage: node scripts/prepare-logo.mjs [path-to-source]
  * The source defaults to the original upload in the user's Downloads folder.
  */
@@ -18,6 +23,9 @@ import zlib from 'node:zlib'
 
 const TARGET_WIDTH = 320
 const OUT = 'public/valora-logo.png'
+const OUT_DARK = 'public/valora-logo-dark.png'
+// Warm ivory that reads as a premium light mark on the navy canvas.
+const DARK_IVORY = [0xf2, 0xef, 0xe8]
 const DEFAULT_SRC = path.join(
   process.env.USERPROFILE ?? process.env.HOME ?? '.',
   'Downloads',
@@ -129,6 +137,16 @@ for (let y = 0; y < th; y++) {
   }
 }
 
+// ---- Dark variant (warm-ivory silhouette) ----------------------------------
+const downDark = Buffer.from(down)
+for (let i = 0; i < downDark.length; i += 4) {
+  if (downDark[i + 3] > 0) {
+    downDark[i] = DARK_IVORY[0]
+    downDark[i + 1] = DARK_IVORY[1]
+    downDark[i + 2] = DARK_IVORY[2]
+  }
+}
+
 // ---- Encode -----------------------------------------------------------------
 const crcTable = (() => { const t = new Int32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c } return t })()
 const crc32 = (buf) => { let c = 0xffffffff; for (let i = 0; i < buf.length; i++) c = crcTable[(c ^ buf[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0 }
@@ -138,19 +156,25 @@ const chunk = (type, data) => {
   const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(Buffer.concat([t, data])))
   return Buffer.concat([len, t, data, crc])
 }
-const ihdr = Buffer.alloc(13)
-ihdr.writeUInt32BE(TARGET_WIDTH, 0); ihdr.writeUInt32BE(th, 4)
-ihdr[8] = 8; ihdr[9] = 6; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0
-const scan = Buffer.alloc(th * (TARGET_WIDTH * 4 + 1))
-for (let y = 0; y < th; y++) {
-  scan[y * (TARGET_WIDTH * 4 + 1)] = 0
-  down.copy(scan, y * (TARGET_WIDTH * 4 + 1) + 1, y * TARGET_WIDTH * 4, (y + 1) * TARGET_WIDTH * 4)
+const encodePng = (pixels, w, h) => {
+  const ihdr = Buffer.alloc(13)
+  ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4)
+  ihdr[8] = 8; ihdr[9] = 6; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0
+  const scan = Buffer.alloc(h * (w * 4 + 1))
+  for (let y = 0; y < h; y++) {
+    scan[y * (w * 4 + 1)] = 0
+    pixels.copy(scan, y * (w * 4 + 1) + 1, y * w * 4, (y + 1) * w * 4)
+  }
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', ihdr),
+    chunk('IDAT', zlib.deflateSync(scan, { level: 9 })),
+    chunk('IEND', Buffer.alloc(0)),
+  ])
 }
-const png = Buffer.concat([
-  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-  chunk('IHDR', ihdr),
-  chunk('IDAT', zlib.deflateSync(scan, { level: 9 })),
-  chunk('IEND', Buffer.alloc(0)),
-])
+const png = encodePng(down, TARGET_WIDTH, th)
+const pngDark = encodePng(downDark, TARGET_WIDTH, th)
 fs.writeFileSync(OUT, png)
+fs.writeFileSync(OUT_DARK, pngDark)
 console.log('wrote', OUT, TARGET_WIDTH + 'x' + th, (png.length / 1024).toFixed(1) + ' KB')
+console.log('wrote', OUT_DARK, TARGET_WIDTH + 'x' + th, (pngDark.length / 1024).toFixed(1) + ' KB')

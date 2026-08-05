@@ -18,10 +18,6 @@
      with this single override. */
   --color-surface: #ffffff;
 
-  /* Persistent-light brand plate. The navy wordmark logo is invisible on
-     navy, so the plates behind it stay ivory in BOTH themes on purpose. */
-  --color-plate: #faf9f5;
-
   /* Brand navy (replaces the indigo scale app-wide) */
   --color-indigo-50: #f2f4f8;
   --color-indigo-100: #e4e8ef;

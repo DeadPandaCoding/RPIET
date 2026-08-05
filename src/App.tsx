@@ -16,8 +16,9 @@ import { Settings } from './pages/Settings'
 function LoadingScreen() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-canvas">
-      <div className="animate-pulse rounded-2xl bg-plate p-3 shadow-sm">
-        <img src="/valora-logo.png" alt="Valora" className="h-14 w-auto" />
+      <div className="animate-pulse">
+        <img src="/valora-logo.png" alt="Valora" className="h-14 w-auto dark:hidden" />
+        <img src="/valora-logo-dark.png" alt="Valora" className="hidden h-14 w-auto dark:block" />
       </div>
       <div className="text-center">
         <p className="text-xs text-slate-400">Loading your portfolio…</p>
