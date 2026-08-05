@@ -5,6 +5,7 @@ import { ToastProvider } from './store/toast'
 import { Layout, type PageKey } from './components/Layout'
 import { AutoLock } from './components/AutoLock'
 import { SignIn } from './pages/SignIn'
+import { ResetPassword } from './pages/ResetPassword'
 import { Dashboard } from './pages/Dashboard'
 import { Properties } from './pages/Properties'
 import { Tenants } from './pages/Tenants'
@@ -28,13 +29,16 @@ function LoadingScreen() {
 }
 
 function Shell() {
-  const { loading, authLoading, mode, user, error } = useData()
+  const { loading, authLoading, mode, user, error, passwordResetPending } = useData()
   const [page, setPage] = useState<PageKey>('dashboard')
 
   if (loading || authLoading) return <LoadingScreen />
 
   // Supabase mode requires a signed-in owner; the database is owner-scoped.
   if (mode === 'supabase' && !user) return <SignIn />
+
+  // After clicking a password-reset email link, force the new-password screen.
+  if (mode === 'supabase' && passwordResetPending) return <ResetPassword />
 
   return (
     <>

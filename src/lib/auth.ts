@@ -49,6 +49,24 @@ export async function signOut() {
 }
 
 /**
+ * Sends a password-reset email via Supabase. The recovery link returns the
+ * user to the app (origin), where the PASSWORD_RECOVERY event triggers the
+ * "set a new password" screen.
+ */
+export async function resetPasswordForEmail(email: string) {
+  const sb = requireClient()
+  return sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin,
+  })
+}
+
+/** Sets a new password for the currently signed-in (recovery) user. */
+export async function updatePassword(password: string) {
+  const sb = requireClient()
+  return sb.auth.updateUser({ password })
+}
+
+/**
  * Revokes EVERY session for the user server-side (this device included).
  * The user must sign in again on every device.
  */

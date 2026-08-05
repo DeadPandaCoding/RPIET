@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import {
+  ArrowLeft,
   Building2,
   CheckCircle2,
   Eye,
@@ -13,10 +14,10 @@ import { Button, Input } from '../components/ui'
 import { EMAIL_RE } from '../lib/validate'
 import { getLockoutState } from '../lib/rateLimit'
 
-type AuthMode = 'signin' | 'signup'
+type AuthMode = 'signin' | 'signup' | 'reset'
 
 export function SignIn() {
-  const { signIn, signUp } = useData()
+  const { signIn, signUp, requestPasswordReset } = useData()
   const [mode, setMode] = useState<AuthMode>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -64,6 +65,29 @@ export function SignIn() {
     setError(null)
     setConfirmed(false)
     const em = email.trim()
+
+    // Password reset only needs a valid email address.
+    if (mode === 'reset') {
+      if (!em) {
+        setError('Enter your email address.')
+        return
+      }
+      if (em.length > 254 || !em.includes('@') || /\s/.test(em)) {
+        setError('Enter a valid email address.')
+        return
+      }
+      setSubmitting(true)
+      try {
+        await requestPasswordReset(em)
+        setConfirmed(true)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Something went wrong.')
+      } finally {
+        setSubmitting(false)
+      }
+      return
+    }
+
     if (!em || !password) {
       setError('Enter your email and password.')
       return
@@ -130,8 +154,17 @@ export function SignIn() {
               <CheckCircle2 className="mb-3 size-12 text-emerald-500" />
               <h2 className="text-base font-bold text-slate-800">Check your email</h2>
               <p className="mt-1 max-w-xs text-sm text-slate-500">
-                We sent a confirmation link to <b>{email.trim()}</b>. Click it to activate your
-                account, then sign in.
+                {mode === 'reset' ? (
+                  <>
+                    We sent a password reset link to <b>{email.trim()}</b>. Click it to choose a
+                    new password.
+                  </>
+                ) : (
+                  <>
+                    We sent a confirmation link to <b>{email.trim()}</b>. Click it to activate
+                    your account, then sign in.
+                  </>
+                )}
               </p>
               <Button variant="secondary" className="mt-5" onClick={() => switchMode('signin')}>
                 Back to sign in
@@ -139,23 +172,33 @@ export function SignIn() {
             </div>
           ) : (
             <>
-              {/* Mode toggle */}
-              <div className="mb-6 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1">
-                {(['signin', 'signup'] as const).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => switchMode(m)}
-                    className={`rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
-                      mode === m
-                        ? 'bg-white text-slate-900 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                  >
-                    {m === 'signin' ? 'Sign in' : 'Create account'}
-                  </button>
-                ))}
-              </div>
+              {/* Mode toggle (hidden while resetting a password) */}
+              {mode !== 'reset' ? (
+                <div className="mb-6 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1">
+                  {(['signin', 'signup'] as const).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => switchMode(m)}
+                      className={`rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
+                        mode === m
+                          ? 'bg-white text-slate-900 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      {m === 'signin' ? 'Sign in' : 'Create account'}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => switchMode('signin')}
+                  className="mb-6 flex items-center gap-1 text-sm font-semibold text-indigo-600 transition-colors hover:text-indigo-700"
+                >
+                  <ArrowLeft className="size-4" /> Back to sign in
+                </button>
+              )}
 
               <form onSubmit={(e) => void submit(e)} className="space-y-4">
                 <label className="block">
@@ -176,48 +219,65 @@ export function SignIn() {
                   </div>
                 </label>
 
-                <label className="block">
-                  <span className="mb-1.5 block text-xs font-semibold text-slate-600">Password</span>
-                  <div className="relative">
-                    <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-                    <Input
-                      id="auth-password"
-                      name="password"
-                      type={showPassword ? 'text' : 'password'}
-                      autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder={mode === 'signup' ? 'At least 6 characters' : 'Your password'}
-                      className="pl-9 pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((s) => !s)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
-                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                    </button>
-                  </div>
-                </label>
+                {mode !== 'reset' && (
+                  <label className="block">
+                    <span className="mb-1.5 flex items-center justify-between text-xs font-semibold text-slate-600">
+                      Password
+                      {mode === 'signin' && (
+                        <button
+                          type="button"
+                          onClick={() => switchMode('reset')}
+                          className="font-semibold text-indigo-600 transition-colors hover:text-indigo-700 hover:underline"
+                        >
+                          Forgot password?
+                        </button>
+                      )}
+                    </span>
+                    <div className="relative">
+                      <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                      <Input
+                        id="auth-password"
+                        name="password"
+                        type={showPassword ? 'text' : 'password'}
+                        autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder={mode === 'signup' ? 'At least 6 characters' : 'Your password'}
+                        className="pl-9 pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((s) => !s)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
+                    </div>
+                  </label>
+                )}
 
-                {/* Remember me — OFF by default: the session is kept only for
-                    this tab, so opening the site later never auto-signs you in. */}
-                <label className="flex cursor-pointer items-center gap-2.5">
-                  <input
-                    type="checkbox"
-                    checked={remember}
-                    onChange={(e) => setRemember(e.target.checked)}
-                    className="size-4 rounded border-slate-300 text-indigo-600 accent-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
-                  />
-                  <span className="text-sm font-medium text-slate-600">
-                    Remember me on this device
-                  </span>
-                </label>
-                {!remember && (
-                  <p className="-mt-1 pl-6 text-xs text-slate-400">
-                    You'll sign in again each time you open the site.
-                  </p>
+                {mode !== 'reset' && (
+                  <>
+                    {/* Remember me — OFF by default: the session is kept only for
+                        this tab, so opening the site later never auto-signs you in. */}
+                    <label className="flex cursor-pointer items-center gap-2.5">
+                      <input
+                        type="checkbox"
+                        checked={remember}
+                        onChange={(e) => setRemember(e.target.checked)}
+                        className="size-4 rounded border-slate-300 text-indigo-600 accent-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
+                      />
+                      <span className="text-sm font-medium text-slate-600">
+                        Remember me on this device
+                      </span>
+                    </label>
+                    {!remember && (
+                      <p className="-mt-1 pl-6 text-xs text-slate-400">
+                        You'll sign in again each time you open the site.
+                      </p>
+                    )}
+                  </>
                 )}
 
                 {isLocked ? (
@@ -246,8 +306,14 @@ export function SignIn() {
                   {submitting ? (
                     <span className="flex items-center gap-2">
                       <span className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                      {mode === 'signin' ? 'Signing in…' : 'Creating account…'}
+                      {mode === 'reset'
+                        ? 'Sending…'
+                        : mode === 'signin'
+                          ? 'Signing in…'
+                          : 'Creating account…'}
                     </span>
+                  ) : mode === 'reset' ? (
+                    'Send reset link'
                   ) : mode === 'signin' ? (
                     'Sign in'
                   ) : (

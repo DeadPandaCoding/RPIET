@@ -37,11 +37,13 @@ import { loadTable } from '../lib/storage'
 import { getSupabase, setRemembered } from '../lib/supabase'
 import {
   onAuthStateChange,
+  resetPasswordForEmail,
   signInWithPassword,
   signOut as authSignOut,
   signOutEverywhere as authSignOutEverywhere,
   signOutOtherDevices as authSignOutOtherDevices,
   signUpWithEmail,
+  updatePassword as authUpdatePassword,
 } from '../lib/auth'
 import { getLockoutState, recordFailure, recordSuccess } from '../lib/rateLimit'
 
@@ -83,11 +85,14 @@ export interface DataContextValue {
   // Auth (Supabase mode only)
   user: User | null
   authLoading: boolean
+  passwordResetPending: boolean
   signIn: (email: string, password: string, remember: boolean) => Promise<void>
   signUp: (email: string, password: string, remember: boolean) => Promise<{ needsConfirmation: boolean }>
   signOut: () => Promise<void>
   signOutEverywhere: () => Promise<void>
   signOutOtherDevices: () => Promise<void>
+  requestPasswordReset: (email: string) => Promise<void>
+  updatePassword: (password: string) => Promise<void>
 
   // Receipts
   receiptUrl: (url: string | null | undefined) => string | null
@@ -127,6 +132,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // ---- Auth state ----------------------------------------------------------
   const [user, setUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
+  // True after a password-recovery redirect lands back in the app: show the
+  // "set a new password" screen instead of the dashboard.
+  const [passwordResetPending, setPasswordResetPending] = useState(false)
   const userRef = useRef<User | null>(null)
   // Bumps whenever a signed receipt URL resolves, so receipt links re-render.
   const [receiptVersion, setReceiptVersion] = useState(0)
@@ -154,8 +162,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
         // Never leave the app on the loading screen if session lookup fails.
         if (active) setAuthLoading(false)
       })
-    const sub = onAuthStateChange((_event, session) => {
+    const sub = onAuthStateChange((event, session) => {
       if (!active) return
+      // Password-recovery redirect (PASSWORD_RECOVERY event) — the user still
+      // has a session, but they must choose a new password before continuing.
+      if (event === 'PASSWORD_RECOVERY') {
+        setPasswordResetPending(true)
+      }
+      // Clear the recovery flag whenever the session actually ends, so a
+      // later normal sign-in is never stuck on the reset screen. (This also
+      // keeps the reset screen up until sign-out resolves after updating,
+      // avoiding a flash of the dashboard.)
+      if (event === 'SIGNED_OUT') {
+        setPasswordResetPending(false)
+      }
       const next = session?.user ?? null
       // Only treat this as a session change when the user actually changed.
       // Supabase fires SIGNED_IN again when the tab regains focus (to re-sync
@@ -318,6 +338,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await authSignOutOtherDevices()
   }, [])
 
+  const requestPasswordReset = useCallback(async (email: string) => {
+    const { error } = await resetPasswordForEmail(email)
+    if (error) throw new Error(error.message)
+    // Supabase reports success even when no account exists for that address —
+    // deliberate, so this endpoint can't be used to probe which emails are
+    // registered.
+  }, [])
+
+  const updatePassword = useCallback(async (password: string) => {
+    const { error } = await authUpdatePassword(password)
+    if (error) throw new Error(error.message)
+    // The reset screen stays visible (pending stays true) until the page
+    // signs the user out below — that prevents a flash of the dashboard
+    // with the recovery session still active.
+  }, [])
+
   // ---- CRUD ----------------------------------------------------------------
   const create = useCallback(
     async <T extends TableName>(table: T, row: NewRowOf<T>) => {
@@ -425,11 +461,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     refresh,
     user,
     authLoading,
+    passwordResetPending,
     signIn,
     signUp,
     signOut,
     signOutEverywhere,
     signOutOtherDevices,
+    requestPasswordReset,
+    updatePassword,
     receiptUrl,
     create,
     update,
