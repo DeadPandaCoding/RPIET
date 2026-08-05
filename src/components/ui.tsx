@@ -1,5 +1,7 @@
-import { useEffect, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
-import { AlertTriangle, X } from 'lucide-react'
+import { useEffect, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import { AlertTriangle, Moon, Sun, X } from 'lucide-react'
+import { getThemePref, setThemePref, type ThemePref } from '../lib/prefs'
+import { resolveTheme } from '../lib/theme'
 
 // ---------------------------------------------------------------------------
 // Button
@@ -14,15 +16,16 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const buttonVariants: Record<ButtonVariant, string> = {
+  // Navy CTA in light; champagne-gold CTA on the navy canvas in dark.
   primary:
-    'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-600/20 focus-visible:ring-indigo-500',
+    'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-600/20 focus-visible:ring-indigo-500 dark:bg-violet-500 dark:text-indigo-950 dark:hover:bg-violet-400 dark:shadow-violet-500/20 dark:focus-visible:ring-violet-400',
   secondary:
-    'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus-visible:ring-slate-400',
+    'bg-surface text-slate-700 border border-slate-300 hover:bg-slate-50 focus-visible:ring-slate-400 dark:hover:bg-slate-200',
   ghost: 'text-slate-600 hover:bg-slate-100 focus-visible:ring-slate-300',
   danger:
-    'bg-rose-600 text-white hover:bg-rose-700 shadow-sm shadow-rose-600/20 focus-visible:ring-rose-500',
+    'bg-rose-600 text-white hover:bg-rose-700 shadow-sm shadow-rose-600/20 focus-visible:ring-rose-500 dark:bg-rose-500 dark:hover:bg-rose-400',
   success:
-    'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 focus-visible:ring-emerald-500',
+    'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 focus-visible:ring-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-400',
 }
 
 const buttonSizes: Record<ButtonSize, string> = {
@@ -48,6 +51,56 @@ export function Button({
 }
 
 // ---------------------------------------------------------------------------
+// Theme toggle
+// ---------------------------------------------------------------------------
+
+/**
+ * Light/dark toggle. Flips to the opposite explicit theme (overriding any
+ * 'system' preference, which remains selectable from Settings). Stays in
+ * sync with the preference and with OS changes while in 'system' mode.
+ */
+export function ThemeToggle({
+  className = '',
+  showLabel = false,
+  iconClassName = 'size-4',
+}: {
+  className?: string
+  /** Render an action-oriented label next to the icon (e.g. sidebar rows). */
+  showLabel?: boolean
+  iconClassName?: string
+}) {
+  const [dark, setDark] = useState(() => resolveTheme(getThemePref()) === 'dark')
+
+  useEffect(() => {
+    const onPrefChange = (e: Event) =>
+      setDark(resolveTheme((e as CustomEvent<ThemePref>).detail) === 'dark')
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const onSystemChange = () => {
+      if (getThemePref() === 'system') setDark(mq.matches)
+    }
+    window.addEventListener('pl:themeChanged', onPrefChange)
+    mq.addEventListener('change', onSystemChange)
+    return () => {
+      window.removeEventListener('pl:themeChanged', onPrefChange)
+      mq.removeEventListener('change', onSystemChange)
+    }
+  }, [])
+
+  return (
+    <button
+      type="button"
+      onClick={() => setThemePref(dark ? 'light' : 'dark')}
+      aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+      className={className}
+    >
+      {dark ? <Sun className={iconClassName} /> : <Moon className={iconClassName} />}
+      {showLabel && <span>{dark ? 'Light mode' : 'Dark mode'}</span>}
+    </button>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Card
 // ---------------------------------------------------------------------------
 
@@ -68,7 +121,7 @@ export function Card({
 }) {
   return (
     <section
-      className={`rounded-2xl border border-slate-200 bg-white shadow-sm ${className}`}
+      className={`rounded-2xl border border-slate-200 bg-surface shadow-sm ${className}`}
     >
       {(title || actions) && (
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
@@ -114,7 +167,7 @@ export function Field({
 }
 
 const fieldBase =
-  'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/25'
+  'w-full rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/25 dark:focus:border-violet-400 dark:focus:ring-violet-500/25'
 
 export function Input({ className = '', ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={`${fieldBase} ${className}`} {...props} />
@@ -137,13 +190,13 @@ export function Textarea({ className = '', ...props }: TextareaHTMLAttributes<HT
 // ---------------------------------------------------------------------------
 
 const badgeColors: Record<string, string> = {
-  emerald: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-  rose: 'bg-rose-50 text-rose-700 ring-rose-600/20',
-  indigo: 'bg-indigo-50 text-indigo-700 ring-indigo-600/20',
-  amber: 'bg-amber-50 text-amber-700 ring-amber-600/20',
-  sky: 'bg-sky-50 text-sky-700 ring-sky-600/20',
+  emerald: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30',
+  rose: 'bg-rose-50 text-rose-700 ring-rose-600/20 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-500/30',
+  indigo: 'bg-indigo-50 text-indigo-700 ring-indigo-600/20 dark:bg-indigo-900/60 dark:text-indigo-200 dark:ring-indigo-500/30',
+  amber: 'bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30',
+  sky: 'bg-sky-50 text-sky-700 ring-sky-600/20 dark:bg-sky-500/15 dark:text-sky-300 dark:ring-sky-500/30',
   slate: 'bg-slate-100 text-slate-600 ring-slate-500/20',
-  violet: 'bg-violet-50 text-violet-700 ring-violet-600/20',
+  violet: 'bg-violet-50 text-violet-700 ring-violet-600/20 dark:bg-violet-500/15 dark:text-violet-300 dark:ring-violet-500/30',
 }
 
 export function Badge({
@@ -225,7 +278,7 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/50 p-4 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm sm:items-center"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
@@ -233,7 +286,7 @@ export function Modal({
       <div
         role="dialog"
         aria-modal="true"
-        className={`animate-modal-pop my-4 w-full ${widths[size]} rounded-2xl bg-white shadow-2xl`}
+        className={`animate-modal-pop my-4 w-full ${widths[size]} rounded-2xl bg-surface shadow-2xl dark:ring-1 dark:ring-white/10`}
       >
         <header className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-4">
           <div>
@@ -302,7 +355,7 @@ export function ConfirmDialog({
       }
     >
       <div className="flex items-start gap-3">
-        <div className="rounded-full bg-rose-50 p-2 text-rose-600">
+        <div className="rounded-full bg-rose-50 p-2 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400">
           <AlertTriangle className="size-5" />
         </div>
         <p className="text-sm text-slate-600">{message}</p>

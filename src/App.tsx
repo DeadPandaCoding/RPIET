@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { ValoraMark } from './components/ValoraMark'
 import { DataProvider, useData } from './store/DataContext'
 import { ToastProvider } from './store/toast'
 import { Layout, type PageKey } from './components/Layout'
@@ -17,13 +16,11 @@ import { Settings } from './pages/Settings'
 function LoadingScreen() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-canvas">
-      <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30">
-        <ValoraMark className="size-7 animate-pulse text-white" strokeWidth={1.5} />
+      <div className="animate-pulse rounded-2xl bg-plate p-3 shadow-sm">
+        <img src="/valora-logo.png" alt="Valora" className="h-14 w-auto" />
       </div>
       <div className="text-center">
-        <p className="text-lg font-extrabold lowercase tracking-tight text-slate-700">valora</p>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">Private Portfolio</p>
-        <p className="mt-1 text-xs text-slate-400">Loading your portfolio…</p>
+        <p className="text-xs text-slate-400">Loading your portfolio…</p>
       </div>
     </div>
   )
@@ -45,7 +42,7 @@ function Shell() {
     <>
       <Layout page={page} onNavigate={setPage}>
         {error && (
-          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
             <b>Something went wrong:</b> {error}
           </div>
         )}

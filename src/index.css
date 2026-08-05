@@ -1,11 +1,26 @@
 @import "tailwindcss";
 
+/* Class-based dark mode: `.dark` on <html> flips the whole app to the
+   Valora navy canvas (see the .dark overrides below). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Premium display serif — wordmarks, headline numerals, page titles */
+  --font-display: "Fraunces", ui-serif, Georgia, "Times New Roman", serif;
 
   /* Valora — ink navy primary, champagne gold accent, warm ivory canvas. */
   --color-canvas: #faf9f5;
+
+  /* Card surface token — white in light mode, deep navy in dark mode.
+     Every card / input / modal uses bg-surface so the whole app flips
+     with this single override. */
+  --color-surface: #ffffff;
+
+  /* Persistent-light brand plate. The navy wordmark logo is invisible on
+     navy, so the plates behind it stay ivory in BOTH themes on purpose. */
+  --color-plate: #faf9f5;
 
   /* Brand navy (replaces the indigo scale app-wide) */
   --color-indigo-50: #f2f4f8;
@@ -33,6 +48,60 @@
   --color-violet-900: #3a2a12;
 }
 
+/* Recharts grid / axis colors (flipped under .dark below) */
+:root {
+  color-scheme: light;
+  --chart-grid: #e2e8f0;
+  --chart-tick: #64748b;
+  --chart-tick-strong: #475569;
+}
+
+/* ------------------------------------------------------------------ */
+/* Dark mode — Valora navy as the primary dark surface                */
+/* ------------------------------------------------------------------ */
+.dark {
+  color-scheme: dark;
+
+  /* Deep Valora navy canvas + slightly lifted navy card surface */
+  --color-canvas: #0d1521;
+  --color-surface: #131d2c;
+
+  /* Neutral scale re-mapped to navy tints: background shades get darker,
+     text shades get lighter — so the whole slate-based UI flips at once. */
+  --color-slate-50: #101a29;
+  --color-slate-100: #15202f;
+  --color-slate-200: #1c2939;
+  --color-slate-300: #33455e;
+  --color-slate-400: #8493aa;
+  --color-slate-500: #9fadc0;
+  --color-slate-600: #c2ccda;
+  --color-slate-700: #dbe2ec;
+  --color-slate-800: #edf1f7;
+  --color-slate-900: #f7f9fc;
+
+  /* Recharts grid / axis colors */
+  --chart-grid: #243244;
+  --chart-tick: #94a3b8;
+  --chart-tick-strong: #cbd5e1;
+
+  /* Focus ring offsets should sit on the canvas, not a white halo */
+  --tw-ring-offset-color: var(--color-canvas);
+}
+
+/* Gold-on-navy selection in dark mode */
+.dark ::selection {
+  background: var(--color-violet-500);
+  color: #0a111a;
+}
+
+/* Dark scrollbars */
+.dark * {
+  scrollbar-color: #33455e transparent;
+}
+.dark *::-webkit-scrollbar-thumb {
+  background-color: #33455e;
+}
+
 html {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -47,7 +116,7 @@ body {
 /* Luxury ink selection highlight */
 ::selection {
   background: var(--color-indigo-600);
-  color: var(--color-canvas);
+  color: #faf9f5;
 }
 
 /* Slim, subtle scrollbars */

@@ -155,17 +155,17 @@ export function Reports() {
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">Income</p>
-          <p className="mt-1 text-xl font-extrabold text-emerald-700">+{formatCurrency(totals.income)}</p>
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/25 dark:bg-emerald-500/10">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Income</p>
+          <p className="font-display mt-1 text-xl font-semibold text-emerald-700 dark:text-emerald-300">+{formatCurrency(totals.income)}</p>
         </div>
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-rose-700">Expenses</p>
-          <p className="mt-1 text-xl font-extrabold text-rose-700">−{formatCurrency(totals.expense)}</p>
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-500/25 dark:bg-rose-500/10">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-300">Expenses</p>
+          <p className="font-display mt-1 text-xl font-semibold text-rose-700 dark:text-rose-300">−{formatCurrency(totals.expense)}</p>
         </div>
-        <div className={`rounded-2xl border p-4 ${totals.net >= 0 ? 'border-violet-200 bg-violet-50' : 'border-rose-200 bg-rose-50'}`}>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-700">Net (NOI)</p>
-          <p className={`mt-1 text-xl font-extrabold ${totals.net >= 0 ? 'text-violet-700' : 'text-rose-700'}`}>{totals.net >= 0 ? '+' : '−'}{formatCurrency(Math.abs(totals.net))}</p>
+        <div className={`rounded-2xl border p-4 ${totals.net >= 0 ? 'border-violet-200 bg-violet-50 dark:border-violet-500/25 dark:bg-violet-500/10' : 'border-rose-200 bg-rose-50 dark:border-rose-500/25 dark:bg-rose-500/10'}`}>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300">Net (NOI)</p>
+          <p className={`font-display mt-1 text-xl font-semibold ${totals.net >= 0 ? 'text-violet-700 dark:text-violet-300' : 'text-rose-700 dark:text-rose-300'}`}>{totals.net >= 0 ? '+' : '−'}{formatCurrency(Math.abs(totals.net))}</p>
         </div>
       </div>
 
@@ -180,7 +180,9 @@ export function Reports() {
             key={t.key}
             onClick={() => setTab(t.key)}
             className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-all sm:flex-none ${
-              tab === t.key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+              tab === t.key
+                ? 'bg-white text-slate-900 shadow-sm dark:bg-indigo-900 dark:text-white'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
             }`}
           >
             {t.label}
@@ -329,7 +331,7 @@ function TenantPaymentDetail({ tenantId }: { tenantId: string }) {
   return (
     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
       {payments.map((p) => (
-        <div key={p.id} className="rounded-lg border border-slate-100 bg-white px-3 py-2">
+        <div key={p.id} className="rounded-lg border border-slate-100 bg-surface px-3 py-2">
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-semibold text-slate-700">{p.category}</span>
             <span className="text-xs font-bold text-emerald-600">+{formatCurrency(p.amount)}</span>

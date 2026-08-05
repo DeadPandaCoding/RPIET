@@ -4,6 +4,7 @@
  */
 
 const AUTO_LOCK_KEY = 'pl.autoLockMinutes'
+const THEME_KEY = 'pl.theme'
 
 export const AUTO_LOCK_OPTIONS = [
   { value: 0, label: 'Never' },
@@ -37,6 +38,46 @@ export function setAutoLockMinutes(minutes: number): void {
   }
   try {
     window.dispatchEvent(new CustomEvent<number>('pl:autoLockChanged', { detail: minutes }))
+  } catch {
+    // Non-browser environment.
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Theme preference
+// ---------------------------------------------------------------------------
+
+export type ThemePref = 'light' | 'dark' | 'system'
+
+export const THEME_OPTIONS: { value: ThemePref; label: string }[] = [
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'system', label: 'System' },
+]
+
+const DEFAULT_THEME: ThemePref = 'system'
+
+/** The stored theme preference ('system' follows the OS setting). */
+export function getThemePref(): ThemePref {
+  try {
+    const raw = window.localStorage.getItem(THEME_KEY)
+    if (raw === 'light' || raw === 'dark' || raw === 'system') return raw
+    return DEFAULT_THEME
+  } catch {
+    return DEFAULT_THEME
+  }
+}
+
+/** Persists the theme preference and notifies the live theme watchers. */
+export function setThemePref(pref: ThemePref): void {
+  try {
+    if (pref === DEFAULT_THEME) window.localStorage.removeItem(THEME_KEY)
+    else window.localStorage.setItem(THEME_KEY, pref)
+  } catch {
+    // Ignore storage errors — the default applies.
+  }
+  try {
+    window.dispatchEvent(new CustomEvent<ThemePref>('pl:themeChanged', { detail: pref }))
   } catch {
     // Non-browser environment.
   }

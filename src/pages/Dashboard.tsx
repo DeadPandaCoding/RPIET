@@ -130,7 +130,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (p: PageKey) => void }) 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold text-slate-500">Portfolio summary</p>
-          <h2 className="text-xl font-extrabold tracking-tight text-slate-900">{rangeLabel(range)}</h2>
+          <h2 className="font-display text-xl font-semibold tracking-tight text-slate-900">{rangeLabel(range)}</h2>
         </div>
         <DateRangeFilter range={range} onChange={setRange} />
       </div>

@@ -226,7 +226,7 @@ export function Incomes() {
           </Select>
           <div className="ml-auto flex items-center gap-2 text-sm">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Total</span>
-            <span className="text-base font-extrabold text-emerald-600">+{formatCurrency(total)}</span>
+            <span className="font-display text-base font-semibold text-emerald-600">+{formatCurrency(total)}</span>
           </div>
         </div>
 

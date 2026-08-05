@@ -40,7 +40,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 ? 'bg-emerald-600'
                 : t.type === 'error'
                   ? 'bg-rose-600'
-                  : 'bg-slate-800'
+                  : 'bg-indigo-600 ring-1 ring-white/15'
             }`}
           >
             {t.type === 'success' && <CheckCircle2 className="size-4 shrink-0" />}

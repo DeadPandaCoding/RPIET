@@ -8,11 +8,14 @@ import {
   Laptop,
   Lock,
   LogOut,
+  Monitor,
+  Moon,
   RefreshCw,
   Server,
   ShieldCheck,
   Smartphone,
   Sparkles,
+  Sun,
   Trash2,
   Upload,
   UserRound,
@@ -21,7 +24,15 @@ import { useData } from '../store/DataContext'
 import { useToast } from '../store/toast'
 import { formatNumber } from '../lib/format'
 import { decryptBackup, encryptBackup } from '../lib/backup'
-import { AUTO_LOCK_OPTIONS, getAutoLockMinutes, setAutoLockMinutes } from '../lib/prefs'
+import {
+  AUTO_LOCK_OPTIONS,
+  getAutoLockMinutes,
+  getThemePref,
+  setAutoLockMinutes,
+  setThemePref,
+  THEME_OPTIONS,
+  type ThemePref,
+} from '../lib/prefs'
 import {
   deviceLabel,
   fetchActiveSessions,
@@ -55,6 +66,7 @@ export function Settings() {
   const [pendingRestore, setPendingRestore] = useState<Dataset | null>(null)
   const [confirmRestore, setConfirmRestore] = useState(false)
   const [autoLock, setAutoLock] = useState<number>(getAutoLockMinutes)
+  const [themePref, setThemePrefState] = useState<ThemePref>(getThemePref)
   const [sessions, setSessions] = useState<SessionInfo[] | null>(null)
   const [sessionsError, setSessionsError] = useState<string | null>(null)
   const [sessionsLoading, setSessionsLoading] = useState(false)
@@ -97,6 +109,13 @@ export function Settings() {
   useEffect(() => {
     if (mode === 'supabase') void loadSessions()
   }, [mode, loadSessions])
+
+  // Keep the Appearance card in sync with theme changes from the header toggle.
+  useEffect(() => {
+    const onChange = (e: Event) => setThemePrefState((e as CustomEvent<ThemePref>).detail)
+    window.addEventListener('pl:themeChanged', onChange)
+    return () => window.removeEventListener('pl:themeChanged', onChange)
+  }, [])
 
   const runSignOutOthers = async () => {
     setSigningOutOthers(true)
@@ -224,7 +243,7 @@ export function Settings() {
           }
         >
           <div className="flex flex-wrap items-center gap-4">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm">
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm dark:from-indigo-400 dark:to-violet-500 dark:text-indigo-950">
               <UserRound className="size-6" />
             </div>
             <div className="min-w-0 flex-1">
@@ -324,7 +343,7 @@ export function Settings() {
                   const mobile = /mobile|iphone|ipad|android/i.test(s.userAgent ?? '')
                   return (
                     <li key={s.id} className="flex items-center gap-3 px-4 py-3">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/60 dark:text-indigo-300">
                         {mobile ? <Smartphone className="size-4.5" /> : <Laptop className="size-4.5" />}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -359,6 +378,35 @@ export function Settings() {
         </Card>
       )}
 
+      {/* Appearance */}
+      <Card
+        title="Appearance"
+        subtitle="Choose how Valora looks on this device — System follows your device setting"
+      >
+        <div className="flex gap-1 rounded-xl bg-slate-100 p-1 sm:w-fit">
+          {THEME_OPTIONS.map((o) => (
+            <button
+              key={o.value}
+              onClick={() => setThemePref(o.value)}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition-all sm:flex-none ${
+                themePref === o.value
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-indigo-900 dark:text-white'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+              }`}
+            >
+              {o.value === 'light' ? (
+                <Sun className="size-4" />
+              ) : o.value === 'dark' ? (
+                <Moon className="size-4" />
+              ) : (
+                <Monitor className="size-4" />
+              )}
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </Card>
+
       {/* Connection status */}
       <Card
         title="Data Source"
@@ -373,8 +421,8 @@ export function Settings() {
           <div
             className={`flex size-14 items-center justify-center rounded-2xl ring-1 ${
               supabase
-                ? 'bg-emerald-50 text-emerald-600 ring-emerald-100'
-                : 'bg-amber-50 text-amber-600 ring-amber-100'
+                ? 'bg-emerald-50 text-emerald-600 ring-emerald-100 dark:bg-emerald-500/15 dark:text-emerald-400 dark:ring-emerald-500/30'
+                : 'bg-amber-50 text-amber-600 ring-amber-100 dark:bg-amber-500/15 dark:text-amber-400 dark:ring-amber-500/30'
             }`}
           >
             {supabase ? <Cloud className="size-7" /> : <Database className="size-7" />}
@@ -405,7 +453,7 @@ export function Settings() {
                     href="https://supabase.com"
                     target="_blank"
                     rel="noreferrer"
-                    className="font-semibold text-indigo-600 hover:underline"
+                    className="font-semibold text-indigo-600 hover:underline dark:text-violet-400 dark:hover:text-violet-300"
                   >
                     supabase.com
                   </a>{' '}
@@ -416,7 +464,7 @@ export function Settings() {
                 </>,
                 <>
                   Run{' '}
-                  <span className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[11px] text-emerald-300">
+                  <span className="rounded bg-indigo-900 px-1.5 py-0.5 font-mono text-[11px] text-emerald-300">
                     supabase/schema.sql
                   </span>{' '}
                   in the Supabase SQL Editor. This creates all tables with per-user Row Level
@@ -424,11 +472,11 @@ export function Settings() {
                 </>,
                 <>
                   Copy{' '}
-                  <span className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[11px] text-emerald-300">
+                  <span className="rounded bg-indigo-900 px-1.5 py-0.5 font-mono text-[11px] text-emerald-300">
                     .env.example
                   </span>{' '}
                   to{' '}
-                  <span className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[11px] text-emerald-300">
+                  <span className="rounded bg-indigo-900 px-1.5 py-0.5 font-mono text-[11px] text-emerald-300">
                     .env
                   </span>
                   , paste in your keys, then restart the dev server. Sign in with your new
@@ -436,14 +484,14 @@ export function Settings() {
                 </>,
               ].map((step, i) => (
                 <li key={i} className="flex items-start gap-3 text-sm text-slate-600">
-                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700 dark:bg-indigo-900/70 dark:text-indigo-300">
                     {i + 1}
                   </span>
                   <span>{step}</span>
                 </li>
               ))}
             </ol>
-            <div className="mt-4 rounded-lg border border-slate-200 bg-white p-3 font-mono text-[11px] leading-relaxed text-slate-500">
+            <div className="mt-4 rounded-lg border border-slate-200 bg-surface p-3 font-mono text-[11px] leading-relaxed text-slate-500">
               <p className="flex items-center gap-1.5 font-sans text-xs font-semibold text-slate-600">
                 <KeyRound className="size-3.5" /> .env
               </p>
@@ -468,7 +516,7 @@ export function Settings() {
         subtitle="Tables, indexes, and Row Level Security policies"
       >
         <div className="flex items-start gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/60 dark:text-indigo-300">
             <FileCode2 className="size-5" />
           </div>
           <div className="text-sm text-slate-600">

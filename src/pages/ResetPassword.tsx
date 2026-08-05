@@ -2,8 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Eye, EyeOff, KeyRound, ShieldCheck } from 'lucide-react'
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/toast'
-import { ValoraMark } from '../components/ValoraMark'
-import { Button, Input } from '../components/ui'
+import { Button, Input, ThemeToggle } from '../components/ui'
 
 /**
  * Shown after the user clicks the password-reset link from their email.
@@ -52,20 +51,21 @@ export function ResetPassword() {
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-canvas px-4 py-10">
       <div className="pointer-events-none absolute -left-32 -top-32 size-96 rounded-full bg-indigo-300/20 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -right-24 size-[28rem] rounded-full bg-violet-300/20 blur-3xl" />
+      <ThemeToggle className="absolute right-4 top-4 rounded-xl border border-slate-200 bg-surface p-2.5 text-slate-500 shadow-sm transition-colors hover:text-slate-700 dark:border-slate-700 dark:text-slate-300 dark:hover:text-white" />
 
       <div className="relative w-full max-w-md">
+        <h1 className="sr-only">Valora</h1>
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="mb-3 flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30">
-            <ValoraMark className="size-7 text-white" strokeWidth={1.5} />
+          <div className="rounded-2xl bg-plate px-4 py-3 shadow-sm">
+            <img src="/valora-logo.png" alt="" className="h-14 w-auto" />
           </div>
-          <h1 className="text-xl font-extrabold lowercase tracking-tight text-slate-900">valora</h1>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">Private Portfolio</p>
+          <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">Private Portfolio</p>
           <p className="mt-2 text-sm text-slate-500">Choose a new password for your account</p>
         </div>
 
-        <div className="animate-modal-pop rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8">
+        <div className="animate-modal-pop rounded-2xl border border-slate-200 bg-surface p-6 shadow-xl shadow-black/5 dark:border-slate-700/70 dark:shadow-black/30 sm:p-8">
           <form onSubmit={(e) => void submit(e)} className="space-y-4">
-            <div className="flex items-center gap-2.5 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2.5 text-xs font-medium text-indigo-700">
+            <div className="flex items-center gap-2.5 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2.5 text-xs font-medium text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-900/60 dark:text-indigo-200">
               <KeyRound className="size-4 shrink-0" />
               Password recovery verified. Set a new password below.
             </div>
@@ -110,7 +110,7 @@ export function ResetPassword() {
             </label>
 
             {error && (
-              <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
                 {error}
               </div>
             )}

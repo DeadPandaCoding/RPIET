@@ -14,8 +14,7 @@ import {
   X,
 } from 'lucide-react'
 import { useData } from '../store/DataContext'
-import { ValoraMark } from './ValoraMark'
-import { Badge } from './ui'
+import { Badge, ThemeToggle } from './ui'
 
 export type PageKey =
   | 'dashboard'
@@ -40,13 +39,12 @@ const NAV_ORDER: PageKey[] = ['dashboard', 'properties', 'tenants', 'incomes', '
 
 function Logo() {
   return (
-    <div className="flex items-center gap-3 px-2">
-      <div className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-900/40">
-        <ValoraMark className="size-6 text-white" />
+    <div className="px-2">
+      <div className="flex items-center justify-center rounded-xl bg-plate px-3 py-3 shadow-sm">
+        <img src="/valora-logo.png" alt="Valora" className="h-10 w-auto" />
       </div>
-      <div className="leading-tight">
-        <div className="text-lg font-extrabold lowercase tracking-tight text-white">valora</div>
-        <div className="text-[10px] font-medium uppercase tracking-[0.3em] text-slate-400">Private Portfolio</div>
+      <div className="mt-2 text-center text-[10px] font-medium uppercase tracking-[0.3em] text-slate-400">
+        Private Portfolio
       </div>
     </div>
   )
@@ -165,6 +163,13 @@ export function Layout({
         <ConnectionChip />
         <UserChip />
         <div className="px-3">
+          <ThemeToggle
+            showLabel
+            iconClassName="size-5 text-slate-500"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition-all hover:bg-white/5 hover:text-slate-200"
+          />
+        </div>
+        <div className="px-3">
           <button
             onClick={() => onNavigate('settings')}
             className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
@@ -184,7 +189,7 @@ export function Layout({
   return (
     <div className="min-h-screen">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 bg-indigo-800 lg:block">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-white/5 bg-indigo-800 lg:block dark:bg-indigo-900">
         {sidebar}
       </aside>
 
@@ -192,10 +197,10 @@ export function Layout({
       {mobileOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 w-64 bg-indigo-800 shadow-2xl">
+          <aside className="absolute inset-y-0 left-0 w-64 border-r border-white/5 bg-indigo-800 shadow-2xl dark:bg-indigo-900">
             <button
               onClick={() => setMobileOpen(false)}
               className="absolute right-3 top-3 rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white"
@@ -210,7 +215,7 @@ export function Layout({
 
       {/* Main content */}
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/85 backdrop-blur">
+        <header className="sticky top-0 z-20 border-b border-slate-200 bg-surface/85 backdrop-blur">
           <div className="flex items-center gap-3 px-4 py-3.5 sm:px-6 lg:px-8">
             <button
               onClick={() => setMobileOpen(true)}
@@ -220,7 +225,7 @@ export function Layout({
               <Menu className="size-5" />
             </button>
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-lg font-extrabold tracking-tight text-slate-900">
+              <h1 className="font-display truncate text-lg font-semibold tracking-tight text-slate-900">
                 {meta.title}
               </h1>
               <p className="hidden truncate text-xs text-slate-500 sm:block">{meta.subtitle}</p>
@@ -228,6 +233,7 @@ export function Layout({
             <Badge color="indigo" className="hidden sm:inline-flex">
               {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
             </Badge>
+            <ThemeToggle className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white" />
           </div>
         </header>
         <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{children}</main>

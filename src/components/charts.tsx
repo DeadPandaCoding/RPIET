@@ -38,7 +38,7 @@ function CurrencyTooltip({
 }) {
   if (!active || !payload || payload.length === 0) return null
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-xl">
+    <div className="rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 shadow-xl">
       <p className="mb-1.5 text-xs font-bold text-slate-700">{label}</p>
       {payload.map((p) => (
         <div key={String(p.dataKey)} className="flex items-center gap-2 py-0.5 text-xs">
@@ -77,15 +77,15 @@ export function IncomeExpenseTrendChart({ data }: { data: MonthPoint[] }) {
             <stop offset="100%" stopColor={EXPENSE_COLOR} stopOpacity={0.02} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
         <XAxis
           dataKey="label"
-          tick={{ fontSize: 11, fill: '#64748b' }}
-          axisLine={{ stroke: '#e2e8f0' }}
+          tick={{ fontSize: 11, fill: 'var(--chart-tick)' }}
+          axisLine={{ stroke: 'var(--chart-grid)' }}
           tickLine={false}
         />
         <YAxis
-          tick={{ fontSize: 11, fill: '#64748b' }}
+          tick={{ fontSize: 11, fill: 'var(--chart-tick)' }}
           axisLine={false}
           tickLine={false}
           tickFormatter={(v: number) => formatCurrencyCompact(v)}
@@ -205,9 +205,9 @@ export function PropertyNetChart({ rows }: { rows: PropertyPerformanceRow[] }) {
   return (
     <ResponsiveContainer width="100%" height={Math.max(220, data.length * 64)}>
       <BarChart data={data} layout="vertical" margin={{ top: 4, right: 24, left: 8, bottom: 0 }} barGap={3}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
-        <XAxis type="number" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatCurrencyCompact(v)} />
-        <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11, fill: '#475569' }} axisLine={false} tickLine={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" horizontal={false} />
+        <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--chart-tick)' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatCurrencyCompact(v)} />
+        <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11, fill: 'var(--chart-tick-strong)' }} axisLine={false} tickLine={false} />
         <Tooltip content={<CurrencyTooltip />} cursor={{ fill: 'rgba(148,163,184,0.12)' }} />
         <Legend
           formatter={(value: string) => (

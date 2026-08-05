@@ -148,7 +148,7 @@ function ExpenseFormModal({
             {isDataUrl(receipt) ? (
               <img src={receipt} alt="Receipt" className="h-16 w-16 rounded-lg border border-slate-200 object-cover" />
             ) : (
-              <div className="flex size-16 items-center justify-center rounded-lg border border-slate-200 bg-white text-indigo-500">
+              <div className="flex size-16 items-center justify-center rounded-lg border border-slate-200 bg-surface text-indigo-500 dark:text-indigo-300">
                 <ImageIcon className="size-6" />
               </div>
             )}
@@ -266,7 +266,7 @@ export function Expenses() {
           </Select>
           <div className="ml-auto flex items-center gap-2 text-sm">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Total</span>
-            <span className="text-base font-extrabold text-rose-600">−{formatCurrency(total)}</span>
+            <span className="font-display text-base font-semibold text-rose-600">−{formatCurrency(total)}</span>
           </div>
         </div>
 

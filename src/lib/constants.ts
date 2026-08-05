@@ -5,11 +5,11 @@ export const INCOME_CATEGORY_COLORS: Record<IncomeCategory, string> = {
   'Security Deposit': '#0ea5e9', // sky-500
   'Late Fee': '#f59e0b', // amber-500
   'Utility Reimbursement': '#a88443', // champagne gold
-  Other: '#64748b', // slate-500
+  Other: '#94a3b8', // slate-400 — readable on ivory AND navy
 }
 
 export const EXPENSE_CATEGORY_COLORS: Record<ExpenseCategory, string> = {
-  'Mortgage Interest': '#1a2536', // valora navy
+  'Mortgage Interest': '#46587b', // mid navy — legible on ivory AND navy
   'Property Tax': '#ef4444', // red-500
   'Cleaning & Maintenance': '#14b8a6', // teal-500
   'Appliance Repair': '#f97316', // orange-500
