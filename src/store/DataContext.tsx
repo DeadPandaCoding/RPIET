@@ -147,7 +147,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         // Never leave the app on the loading screen if session lookup fails.
         if (active) setAuthLoading(false)
       })
-    const sub = onAuthStateChange((event, session) => {
+    const sub = onAuthStateChange((_event, session) => {
       if (!active) return
       const next = session?.user ?? null
       // Only treat this as a session change when the user actually changed.
