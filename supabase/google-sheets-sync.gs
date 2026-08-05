@@ -23,7 +23,10 @@
 
 // ── CONFIGURATION ───────────────────────────────────────────────────────────
 // Found in Supabase Dashboard → Project Settings → API.
-const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co'; // e.g. https://abc123.supabase.co
+// Paste ONLY the base Project URL, e.g. https://abc123.supabase.co
+// (no trailing slash, no /rest/v1 — the script normalizes it anyway, but
+// the plain base URL is correct).
+const SUPABASE_URL = 'https://YOUR-PROJECT.supabase.co';
 const ANON_KEY = 'your-anon-key';
 const SERVICE_KEY = 'your-service-role-key'; // Settings → API → service_role
 
@@ -101,7 +104,7 @@ function syncAll() {
 
 // ── Data fetching (Supabase REST API, service role) ─────────────────────────
 function fetchTable_(table) {
-  const url = SUPABASE_URL + '/rest/v1/' + table + '?select=*&order=created_at.asc';
+  const url = apiUrl_(table);
   const res = UrlFetchApp.fetch(url, {
     method: 'get',
     headers: {
@@ -116,6 +119,20 @@ function fetchTable_(table) {
     throw new Error('HTTP ' + code + ': ' + res.getContentText().slice(0, 200));
   }
   return JSON.parse(res.getContentText());
+}
+
+/**
+ * Builds a correct Supabase REST URL no matter how SUPABASE_URL was pasted.
+ * Handles: trailing slashes, whitespace, and a URL that already ends in
+ * /rest/v1 (e.g. copied from the dashboard's REST API box). Without this,
+ * those variations produce the PGRST125 'Invalid path' error.
+ */
+function apiUrl_(table) {
+  var base = String(SUPABASE_URL).trim();
+  base = base.replace(/\/rest\/v1\/?$/, ''); // strip accidental /rest/v1 suffix
+  base = base.replace(/\/+$/, '');            // strip trailing slashes
+  if (!/^https?:\/\//i.test(base)) base = 'https://' + base;
+  return base + '/rest/v1/' + table + '?select=*&order=created_at.asc';
 }
 
 // ── Sheet writing ───────────────────────────────────────────────────────────
