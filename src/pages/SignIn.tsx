@@ -24,6 +24,7 @@ export function SignIn() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmed, setConfirmed] = useState(false)
+  const [remember, setRemember] = useState(false)
   const [, setTick] = useState(0)
 
   const lock = getLockoutState(email)
@@ -93,9 +94,9 @@ export function SignIn() {
     setSubmitting(true)
     try {
       if (mode === 'signin') {
-        await signIn(em, password)
+        await signIn(em, password, remember)
       } else {
-        const { needsConfirmation } = await signUp(em, password)
+        const { needsConfirmation } = await signUp(em, password, remember)
         if (needsConfirmation) setConfirmed(true)
       }
     } catch (err) {
@@ -199,6 +200,25 @@ export function SignIn() {
                     </button>
                   </div>
                 </label>
+
+                {/* Remember me — OFF by default: the session is kept only for
+                    this tab, so opening the site later never auto-signs you in. */}
+                <label className="flex cursor-pointer items-center gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                    className="size-4 rounded border-slate-300 text-indigo-600 accent-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
+                  />
+                  <span className="text-sm font-medium text-slate-600">
+                    Remember me on this device
+                  </span>
+                </label>
+                {!remember && (
+                  <p className="-mt-1 pl-6 text-xs text-slate-400">
+                    You'll sign in again each time you open the site.
+                  </p>
+                )}
 
                 {isLocked ? (
                   <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">

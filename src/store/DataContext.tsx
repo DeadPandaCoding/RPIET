@@ -34,7 +34,7 @@ import {
   uploadReceipt as uploadReceiptApi,
 } from '../lib/api'
 import { loadTable } from '../lib/storage'
-import { getSupabase } from '../lib/supabase'
+import { getSupabase, setRemembered } from '../lib/supabase'
 import {
   onAuthStateChange,
   signInWithPassword,
@@ -81,8 +81,8 @@ export interface DataContextValue {
   // Auth (Supabase mode only)
   user: User | null
   authLoading: boolean
-  signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string) => Promise<{ needsConfirmation: boolean }>
+  signIn: (email: string, password: string, remember: boolean) => Promise<void>
+  signUp: (email: string, password: string, remember: boolean) => Promise<{ needsConfirmation: boolean }>
   signOut: () => Promise<void>
 
   // Receipts
@@ -250,7 +250,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // ---- Auth actions --------------------------------------------------------
-  const signIn = useCallback(async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string, remember: boolean) => {
     // Reject before hitting Supabase while this email is locked out.
     const lock = getLockoutState(email)
     if (lock.locked) {
@@ -259,6 +259,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         `Too many failed attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'}.`,
       )
     }
+    // Set the persistence preference BEFORE the session is written, so the
+    // storage adapter puts the token in localStorage (remembered) or
+    // sessionStorage (forgotten on tab close). Note: on a FAILED attempt the
+    // flag is still set here — harmless, since a flag with no session
+    // restores nothing, and a later successful sign-in overwrites it.
+    setRemembered(remember)
     const { error } = await signInWithPassword(email, password)
     if (error) {
       recordFailure(email)
@@ -268,7 +274,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signUp = useCallback(
-    async (email: string, password: string): Promise<{ needsConfirmation: boolean }> => {
+    async (email: string, password: string, remember: boolean): Promise<{ needsConfirmation: boolean }> => {
       const lock = getLockoutState(email)
       if (lock.locked) {
         const mins = Math.ceil(lock.retryInMs / 60000)
@@ -276,6 +282,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           `Too many failed attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'}.`,
         )
       }
+      // Same persistence rule as sign-in.
+      setRemembered(remember)
       const { data, error } = await signUpWithEmail(email, password)
       if (error) {
         recordFailure(email)
@@ -290,6 +298,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   )
 
   const signOut = useCallback(async () => {
+    // Explicit sign-out also forgets the remember-me preference, so a shared
+    // device is left clean for the next person.
+    setRemembered(false)
     await authSignOut()
   }, [])
 
