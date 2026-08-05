@@ -1,5 +1,5 @@
 -- ============================================================================
--- PropertyLedger — Supabase schema
+-- Valora — Supabase schema
 -- Run this in the Supabase SQL Editor (Dashboard → SQL Editor → New query).
 --
 -- Creates: properties, units, tenants, incomes, expenses

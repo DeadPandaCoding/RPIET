@@ -1,5 +1,5 @@
 /**
- * Client-side login rate limiting for PropertyLedger.
+ * Client-side login rate limiting for Valora.
  *
  * Enforces a simple brute-force deterrent: a maximum of MAX_ATTEMPTS failed
  * sign-in attempts per email within WINDOW_MS (sliding window), after which

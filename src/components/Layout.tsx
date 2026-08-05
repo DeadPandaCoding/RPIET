@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react'
 import { useData } from '../store/DataContext'
+import { ValoraMark } from './ValoraMark'
 import { Badge } from './ui'
 
 export type PageKey =
@@ -39,13 +40,13 @@ const NAV_ORDER: PageKey[] = ['dashboard', 'properties', 'tenants', 'incomes', '
 
 function Logo() {
   return (
-    <div className="flex items-center gap-2.5 px-2">
-      <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-900/40">
-        <Building2 className="size-5 text-white" />
+    <div className="flex items-center gap-3 px-2">
+      <div className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-900/40">
+        <ValoraMark className="size-6 text-white" />
       </div>
       <div className="leading-tight">
-        <div className="text-sm font-extrabold tracking-tight text-white">PropertyLedger</div>
-        <div className="text-[10px] font-medium uppercase tracking-widest text-slate-400">Portfolio Edition</div>
+        <div className="text-lg font-extrabold lowercase tracking-tight text-white">valora</div>
+        <div className="text-[10px] font-medium uppercase tracking-[0.3em] text-slate-400">Private Portfolio</div>
       </div>
     </div>
   )
@@ -73,11 +74,11 @@ function NavItems({
                 : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
             }`}
           >
-            <span className={active ? 'text-indigo-300' : 'text-slate-500 group-hover:text-slate-300'}>
+            <span className={active ? 'text-violet-300' : 'text-slate-500 group-hover:text-slate-300'}>
               {meta.icon}
             </span>
             {meta.label}
-            {active && <span className="ml-auto size-1.5 rounded-full bg-indigo-400" />}
+            {active && <span className="ml-auto size-1.5 rounded-full bg-violet-400" />}
           </button>
         )
       })}
@@ -183,7 +184,7 @@ export function Layout({
   return (
     <div className="min-h-screen">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 bg-slate-900 lg:block">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 bg-indigo-800 lg:block">
         {sidebar}
       </aside>
 
@@ -194,7 +195,7 @@ export function Layout({
             className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 w-64 bg-slate-900 shadow-2xl">
+          <aside className="absolute inset-y-0 left-0 w-64 bg-indigo-800 shadow-2xl">
             <button
               onClick={() => setMobileOpen(false)}
               className="absolute right-3 top-3 rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white"

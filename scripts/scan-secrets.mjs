@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Secret scanner for PropertyLedger.
+ * Secret scanner for Valora.
  *
  * Usage:
  *   node scripts/scan-secrets.mjs           # scan all tracked files

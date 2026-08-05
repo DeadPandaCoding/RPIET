@@ -1,7 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import {
   ArrowLeft,
-  Building2,
   CheckCircle2,
   Eye,
   EyeOff,
@@ -10,6 +9,7 @@ import {
   ShieldCheck,
 } from 'lucide-react'
 import { useData } from '../store/DataContext'
+import { ValoraMark } from '../components/ValoraMark'
 import { Button, Input } from '../components/ui'
 import { EMAIL_RE } from '../lib/validate'
 import { getLockoutState } from '../lib/rateLimit'
@@ -133,19 +133,20 @@ export function SignIn() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-4 py-10">
-      {/* Decorative background */}
-      <div className="pointer-events-none absolute -left-32 -top-32 size-96 rounded-full bg-indigo-300/30 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-40 -right-24 size-[28rem] rounded-full bg-violet-300/30 blur-3xl" />
-      <div className="pointer-events-none absolute left-1/2 top-1/3 size-64 -translate-x-1/2 rounded-full bg-sky-200/40 blur-3xl" />
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-canvas px-4 py-10">
+      {/* Decorative background — soft ink & champagne washes */}
+      <div className="pointer-events-none absolute -left-32 -top-32 size-96 rounded-full bg-indigo-300/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -right-24 size-[28rem] rounded-full bg-violet-300/20 blur-3xl" />
+      <div className="pointer-events-none absolute left-1/2 top-1/3 size-64 -translate-x-1/2 rounded-full bg-sky-200/25 blur-3xl" />
 
       <div className="relative w-full max-w-md">
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="mb-3 flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30">
-            <Building2 className="size-7 text-white" />
+            <ValoraMark className="size-7 text-white" strokeWidth={1.5} />
           </div>
-          <h1 className="text-xl font-extrabold tracking-tight text-slate-900">PropertyLedger</h1>
-          <p className="mt-1 text-sm text-slate-500">Sign in to manage your rental portfolio</p>
+          <h1 className="text-xl font-extrabold lowercase tracking-tight text-slate-900">valora</h1>
+          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">Private Portfolio</p>
+          <p className="mt-2 text-sm text-slate-500">Sign in to manage your rental portfolio</p>
         </div>
 
         <div className="animate-modal-pop rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-8">

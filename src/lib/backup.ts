@@ -1,7 +1,7 @@
 import type { Dataset } from './types'
 
 /**
- * Password-encrypted full-database backup for PropertyLedger.
+ * Password-encrypted full-database backup for Valora.
  *
  * File layout (binary): MAGIC + VERSION(1) + SALT(16) + IV(12) + ciphertext.
  * The ciphertext is an AES-256-GCM encryption of the JSON BackupEnvelope, so
@@ -10,11 +10,13 @@ import type { Dataset } from './types'
  * the deployed site and localhost both provide).
  */
 
-export const BACKUP_MAGIC = 'PROPERTYLEDGER-BACKUP'
+export const BACKUP_MAGIC = 'VALORA-BACKUP'
+/** Backups written before the Valora rebrand keep the old magic. */
+export const BACKUP_LEGACY_MAGIC = 'PROPERTYLEDGER-BACKUP'
 export const BACKUP_VERSION = 1
 
 interface BackupEnvelope {
-  format: 'propertyledger-backup'
+  format: 'valora-backup' | 'propertyledger-backup'
   version: number
   createdAt: string
   dataset: Dataset
@@ -43,7 +45,7 @@ export async function encryptBackup(dataset: Dataset, password: string): Promise
   const key = await deriveKey(password, salt)
 
   const envelope: BackupEnvelope = {
-    format: 'propertyledger-backup',
+    format: 'valora-backup',
     version: BACKUP_VERSION,
     createdAt: new Date().toISOString(),
     dataset,
@@ -61,19 +63,22 @@ export async function encryptBackup(dataset: Dataset, password: string): Promise
 export async function decryptBackup(blob: Blob, password: string): Promise<Dataset> {
   const buf = new Uint8Array(await blob.arrayBuffer())
   const magic = encoder.encode(BACKUP_MAGIC)
-  const minLength = magic.length + 1 + 16 + 12
-  if (buf.length < minLength) throw new Error('This file is not a PropertyLedger backup.')
+  const legacyMagic = encoder.encode(BACKUP_LEGACY_MAGIC)
+  const minLength = Math.max(magic.length, legacyMagic.length) + 1 + 16 + 12
+  if (buf.length < minLength) throw new Error('This file is not a Valora backup.')
 
-  for (let i = 0; i < magic.length; i++) {
-    if (buf[i] !== magic[i]) throw new Error('This file is not a PropertyLedger backup.')
-  }
+  const matches = (m: Uint8Array) => buf.length >= m.length && m.every((b, i) => buf[i] === b)
+  const isNew = matches(magic)
+  const isLegacy = matches(legacyMagic)
+  if (!isNew && !isLegacy) throw new Error('This file is not a Valora backup.')
+  const usedMagic = isNew ? magic : legacyMagic
 
-  const version = buf[magic.length]
+  const version = buf[usedMagic.length]
   if (version !== BACKUP_VERSION) {
     throw new Error(`This backup was created by an unsupported version (${version}).`)
   }
 
-  let off = magic.length + 1
+  let off = usedMagic.length + 1
   const salt = buf.subarray(off, off + 16)
   off += 16
   const iv = buf.subarray(off, off + 12)
@@ -94,8 +99,11 @@ export async function decryptBackup(blob: Blob, password: string): Promise<Datas
   } catch {
     throw new Error('The backup data could not be read.')
   }
-  if (envelope.format !== 'propertyledger-backup' || envelope.version !== BACKUP_VERSION) {
-    throw new Error('This file is not a valid PropertyLedger backup.')
+  if (
+    (envelope.format !== 'valora-backup' && envelope.format !== 'propertyledger-backup') ||
+    envelope.version !== BACKUP_VERSION
+  ) {
+    throw new Error('This file is not a valid Valora backup.')
   }
   const ds = envelope.dataset
   if (
@@ -107,7 +115,7 @@ export async function decryptBackup(blob: Blob, password: string): Promise<Datas
     !Array.isArray(ds.incomes) ||
     !Array.isArray(ds.expenses)
   ) {
-    throw new Error('This backup does not contain valid PropertyLedger data.')
+    throw new Error('This backup does not contain valid Valora data.')
   }
   return envelope.dataset
 }

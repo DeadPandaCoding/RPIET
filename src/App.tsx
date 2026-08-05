@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Building2 } from 'lucide-react'
+import { ValoraMark } from './components/ValoraMark'
 import { DataProvider, useData } from './store/DataContext'
 import { ToastProvider } from './store/toast'
 import { Layout, type PageKey } from './components/Layout'
@@ -16,13 +16,14 @@ import { Settings } from './pages/Settings'
 
 function LoadingScreen() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-canvas">
       <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30">
-        <Building2 className="size-7 animate-pulse text-white" />
+        <ValoraMark className="size-7 animate-pulse text-white" strokeWidth={1.5} />
       </div>
       <div className="text-center">
-        <p className="text-sm font-bold text-slate-700">PropertyLedger</p>
-        <p className="text-xs text-slate-400">Loading your portfolio…</p>
+        <p className="text-lg font-extrabold lowercase tracking-tight text-slate-700">valora</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">Private Portfolio</p>
+        <p className="mt-1 text-xs text-slate-400">Loading your portfolio…</p>
       </div>
     </div>
   )

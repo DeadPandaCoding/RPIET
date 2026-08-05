@@ -337,7 +337,7 @@ export function exportPDF(opts: {
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(16)
-  doc.setTextColor(15, 23, 42)
+  doc.setTextColor(26, 37, 54) // Valora ink navy
   doc.text(opts.title, 40, 44)
 
   doc.setFont('helvetica', 'normal')
@@ -366,7 +366,7 @@ export function exportPDF(opts: {
     startY: opts.summary?.length ? 84 : 78,
     margin: { left: 40, right: 40 },
     styles: { fontSize: 8.5, cellPadding: 5 },
-    headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: 'bold' },
+    headStyles: { fillColor: [26, 37, 54], textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [248, 250, 252] },
   })
 

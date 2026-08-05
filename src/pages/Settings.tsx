@@ -178,7 +178,7 @@ export function Settings() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `propertyledger-backup-${new Date().toISOString().slice(0, 10)}.plbk`
+      a.download = `valora-backup-${new Date().toISOString().slice(0, 10)}.plbk`
       a.click()
       URL.revokeObjectURL(url)
       toast('Backup downloaded — keep the file somewhere safe', 'success')
@@ -362,7 +362,7 @@ export function Settings() {
       {/* Connection status */}
       <Card
         title="Data Source"
-        subtitle="Where your PropertyLedger data lives"
+        subtitle="Where your Valora data lives"
         actions={
           <Button variant="secondary" size="sm" onClick={() => void runTest()} disabled={testing}>
             <RefreshCw className={`size-3.5 ${testing ? 'animate-spin' : ''}`} /> Test connection

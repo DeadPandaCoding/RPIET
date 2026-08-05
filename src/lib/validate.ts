@@ -1,5 +1,5 @@
 /**
- * Central input validation & sanitization for PropertyLedger.
+ * Central input validation & sanitization for Valora.
  *
  * Every row that enters the app (create + update, in both Supabase and local
  * modes) passes through validateRow / validatePatch before it is written.

@@ -3,6 +3,34 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Valora — ink navy primary, champagne gold accent, warm ivory canvas. */
+  --color-canvas: #faf9f5;
+
+  /* Brand navy (replaces the indigo scale app-wide) */
+  --color-indigo-50: #f2f4f8;
+  --color-indigo-100: #e4e8ef;
+  --color-indigo-200: #c9d1de;
+  --color-indigo-300: #9facc2;
+  --color-indigo-400: #6e7f9e;
+  --color-indigo-500: #46587b;
+  --color-indigo-600: #1a2536;
+  --color-indigo-700: #131d2c;
+  --color-indigo-800: #0e1622;
+  --color-indigo-900: #0a111a;
+
+  /* Champagne gold (replaces the violet scale app-wide — so "violet"
+     utilities such as bg-violet-50 / text-violet-600 now render gold) */
+  --color-violet-50: #f7f3ea;
+  --color-violet-100: #efe6d4;
+  --color-violet-200: #e0cfab;
+  --color-violet-300: #cdb27e;
+  --color-violet-400: #bc9b5e;
+  --color-violet-500: #a88443;
+  --color-violet-600: #8c6b31;
+  --color-violet-700: #6e5323;
+  --color-violet-800: #523d1b;
+  --color-violet-900: #3a2a12;
 }
 
 html {
@@ -12,8 +40,14 @@ html {
 }
 
 body {
-  /* Off-white (#F8FAFC) workspace canvas per the fintech palette */
-  @apply bg-slate-50 text-slate-800;
+  /* Warm ivory workspace canvas */
+  @apply bg-canvas text-slate-800;
+}
+
+/* Luxury ink selection highlight */
+::selection {
+  background: var(--color-indigo-600);
+  color: var(--color-canvas);
 }
 
 /* Slim, subtle scrollbars */

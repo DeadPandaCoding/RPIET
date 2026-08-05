@@ -18,10 +18,10 @@ import {
 import { formatCurrency, formatCurrencyCompact } from '../lib/format'
 import type { CategorySlice, MonthPoint, PropertyPerformanceRow } from '../utils/reporting'
 
-// Palette: emerald = income, crimson red = expenses, amethyst = net/mixed stats.
+// Palette: emerald = income, crimson red = expenses, champagne gold = net/mixed stats.
 const INCOME_COLOR = '#10b981'
 const EXPENSE_COLOR = '#ef4444'
-const NET_COLOR = '#8b5cf6'
+const NET_COLOR = '#a88443'
 
 // ---------------------------------------------------------------------------
 // Shared tooltip

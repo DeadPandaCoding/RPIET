@@ -1,6 +1,6 @@
-# PropertyLedger — Rental Property Income & Expense Tracker
+# Valora — Private Portfolio
 
-A clean, modern web app for managing multiple rental properties, units, and tenants —
+A private portfolio platform for managing rental properties, units, and tenants —
 with income/expense tracking, dashboards, financial reports, and CSV/PDF exports.
 
 Built with **React 19 + TypeScript + Vite**, styled with **Tailwind CSS v4**, charts with
