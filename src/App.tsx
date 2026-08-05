@@ -16,7 +16,7 @@ import { Settings } from './pages/Settings'
 
 function LoadingScreen() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-100">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50">
       <div className="flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30">
         <Building2 className="size-7 animate-pulse text-white" />
       </div>

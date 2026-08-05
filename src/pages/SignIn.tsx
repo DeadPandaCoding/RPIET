@@ -133,7 +133,7 @@ export function SignIn() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-100 px-4 py-10">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-4 py-10">
       {/* Decorative background */}
       <div className="pointer-events-none absolute -left-32 -top-32 size-96 rounded-full bg-indigo-300/30 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -right-24 size-[28rem] rounded-full bg-violet-300/30 blur-3xl" />

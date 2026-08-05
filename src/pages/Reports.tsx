@@ -157,15 +157,15 @@ export function Reports() {
       <div className="grid grid-cols-3 gap-4">
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">Income</p>
-          <p className="mt-1 text-xl font-extrabold text-emerald-700">{formatCurrency(totals.income)}</p>
+          <p className="mt-1 text-xl font-extrabold text-emerald-700">+{formatCurrency(totals.income)}</p>
         </div>
         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-rose-700">Expenses</p>
-          <p className="mt-1 text-xl font-extrabold text-rose-700">{formatCurrency(totals.expense)}</p>
+          <p className="mt-1 text-xl font-extrabold text-rose-700">−{formatCurrency(totals.expense)}</p>
         </div>
-        <div className={`rounded-2xl border p-4 ${totals.net >= 0 ? 'border-indigo-200 bg-indigo-50' : 'border-rose-200 bg-rose-50'}`}>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-700">Net (NOI)</p>
-          <p className={`mt-1 text-xl font-extrabold ${totals.net >= 0 ? 'text-indigo-700' : 'text-rose-700'}`}>{formatCurrency(totals.net)}</p>
+        <div className={`rounded-2xl border p-4 ${totals.net >= 0 ? 'border-violet-200 bg-violet-50' : 'border-rose-200 bg-rose-50'}`}>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-700">Net (NOI)</p>
+          <p className={`mt-1 text-xl font-extrabold ${totals.net >= 0 ? 'text-violet-700' : 'text-rose-700'}`}>{totals.net >= 0 ? '+' : '−'}{formatCurrency(Math.abs(totals.net))}</p>
         </div>
       </div>
 
@@ -228,9 +228,12 @@ export function Reports() {
                             </span>
                           </td>
                           <td className="px-4 py-3 text-right text-slate-600">{formatCurrency(r.monthlyRentPotential)}</td>
-                          <td className="px-4 py-3 text-right font-semibold text-emerald-600">{formatCurrency(r.income)}</td>
-                          <td className="px-4 py-3 text-right font-semibold text-rose-600">{formatCurrency(r.expense)}</td>
-                          <td className={`px-4 py-3 text-right font-bold ${r.net >= 0 ? 'text-slate-800' : 'text-rose-600'}`}>{formatCurrency(r.net)}</td>
+                          <td className="px-4 py-3 text-right font-semibold text-emerald-600">+{formatCurrency(r.income)}</td>
+                          <td className="px-4 py-3 text-right font-semibold text-rose-600">−{formatCurrency(r.expense)}</td>
+                          <td className={`px-4 py-3 text-right font-bold ${r.net >= 0 ? 'text-slate-800' : 'text-rose-600'}`}>
+                            {r.net >= 0 ? '+' : '−'}
+                            {formatCurrency(Math.abs(r.net))}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -284,10 +287,10 @@ export function Reports() {
                             <td className="px-4 py-3 text-slate-600">{r.unit?.unit_name ?? '—'}</td>
                             <td className="px-4 py-3 text-right text-slate-600">{formatCurrency(r.monthlyRent)}</td>
                             <td className="px-4 py-3 text-right text-slate-600">{formatCurrency(r.expectedRent)}</td>
-                            <td className="px-4 py-3 text-right font-semibold text-emerald-600">{formatCurrency(r.rentReceived)}</td>
+                            <td className="px-4 py-3 text-right font-semibold text-emerald-600">+{formatCurrency(r.rentReceived)}</td>
                             <td className="px-4 py-3 text-right text-slate-600">{r.deposits > 0 ? formatCurrency(r.deposits) : '—'}</td>
                             <td className={`px-4 py-3 text-right font-bold ${r.outstanding > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                              {r.outstanding > 0 ? formatCurrency(r.outstanding) : '✓'}
+                              {r.outstanding > 0 ? `−${formatCurrency(r.outstanding)}` : '✓'}
                             </td>
                           </tr>
                           {open && (

@@ -255,7 +255,7 @@ export function Tenants() {
                 </div>
                 <div className="px-2">
                   <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Paid {currentYear}</p>
-                  <p className="text-sm font-bold text-emerald-600">{formatCurrency(row.totalReceived)}</p>
+                  <p className="text-sm font-bold text-emerald-600">+{formatCurrency(row.totalReceived)}</p>
                 </div>
                 <div className="px-2">
                   <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Balance</p>

@@ -272,7 +272,7 @@ export function Properties() {
                     <p className="text-sm font-bold text-slate-800">{s?.units ?? 0}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Net</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Net (all-time)</p>
                     <p className={`text-sm font-bold ${(s?.income ?? 0) - (s?.expense ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                       {formatCurrency((s?.income ?? 0) - (s?.expense ?? 0))}
                     </p>

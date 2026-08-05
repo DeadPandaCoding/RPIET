@@ -95,7 +95,7 @@ function IncomeFormModal({
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => void submit()}>{editing ? 'Save changes' : 'Record income'}</Button>
+          <Button variant="success" onClick={() => void submit()}>{editing ? 'Save changes' : 'Record income'}</Button>
         </>
       }
     >
@@ -200,7 +200,7 @@ export function Incomes() {
           <Button variant="secondary" onClick={exportCSV} disabled={filtered.length === 0}>
             <Download className="size-4" /> CSV
           </Button>
-          <Button onClick={() => setModal({ open: true, editing: null })}>
+          <Button variant="success" onClick={() => setModal({ open: true, editing: null })}>
             <Plus className="size-4" /> Record Income
           </Button>
         </div>
@@ -226,7 +226,7 @@ export function Incomes() {
           </Select>
           <div className="ml-auto flex items-center gap-2 text-sm">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Total</span>
-            <span className="text-base font-extrabold text-emerald-600">{formatCurrency(total)}</span>
+            <span className="text-base font-extrabold text-emerald-600">+{formatCurrency(total)}</span>
           </div>
         </div>
 
@@ -237,7 +237,7 @@ export function Incomes() {
               title="No income in this period"
               description="Record your first income entry, or widen the date range or filters."
               action={
-                <Button onClick={() => setModal({ open: true, editing: null })}>
+                <Button variant="success" onClick={() => setModal({ open: true, editing: null })}>
                   <Plus className="size-4" /> Record Income
                 </Button>
               }
@@ -293,7 +293,7 @@ export function Incomes() {
           </div>
         )}
         <div className="border-t border-slate-100 px-4 py-2.5 text-xs text-slate-400">
-          {formatNumber(filtered.length)} entries · Export for taxes anytime via the CSV button.
+          {formatNumber(filtered.length)} {filtered.length === 1 ? 'entry' : 'entries'} · Export for taxes anytime via the CSV button.
         </div>
       </Card>
 

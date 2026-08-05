@@ -107,7 +107,7 @@ function ExpenseFormModal({
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => void submit()} disabled={uploading}>
+          <Button variant="danger" onClick={() => void submit()} disabled={uploading}>
             {editing ? 'Save changes' : 'Record expense'}
           </Button>
         </>
@@ -240,7 +240,7 @@ export function Expenses() {
           <Button variant="secondary" onClick={exportCSV} disabled={filtered.length === 0}>
             <Download className="size-4" /> CSV
           </Button>
-          <Button onClick={() => setModal({ open: true, editing: null })}>
+          <Button variant="danger" onClick={() => setModal({ open: true, editing: null })}>
             <Plus className="size-4" /> Record Expense
           </Button>
         </div>
@@ -266,7 +266,7 @@ export function Expenses() {
           </Select>
           <div className="ml-auto flex items-center gap-2 text-sm">
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Total</span>
-            <span className="text-base font-extrabold text-rose-600">{formatCurrency(total)}</span>
+            <span className="text-base font-extrabold text-rose-600">−{formatCurrency(total)}</span>
           </div>
         </div>
 
@@ -277,7 +277,7 @@ export function Expenses() {
               title="No expenses in this period"
               description="Record your first expense, or widen the date range or filters."
               action={
-                <Button onClick={() => setModal({ open: true, editing: null })}>
+                <Button variant="danger" onClick={() => setModal({ open: true, editing: null })}>
                   <Plus className="size-4" /> Record Expense
                 </Button>
               }
@@ -350,7 +350,7 @@ export function Expenses() {
           </div>
         )}
         <div className="border-t border-slate-100 px-4 py-2.5 text-xs text-slate-400">
-          {formatNumber(filtered.length)} entries · Attach receipts for easy tax documentation.
+          {formatNumber(filtered.length)} {filtered.length === 1 ? 'entry' : 'entries'} · Attach receipts for easy tax documentation.
         </div>
       </Card>
 

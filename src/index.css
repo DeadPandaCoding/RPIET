@@ -12,7 +12,8 @@ html {
 }
 
 body {
-  @apply bg-slate-100 text-slate-800;
+  /* Off-white (#F8FAFC) workspace canvas per the fintech palette */
+  @apply bg-slate-50 text-slate-800;
 }
 
 /* Slim, subtle scrollbars */

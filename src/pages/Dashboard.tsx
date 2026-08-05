@@ -22,7 +22,7 @@ import {
   INCOME_CATEGORY_COLORS,
   EXPENSE_CATEGORY_COLORS,
 } from '../lib/constants'
-import { formatCurrency, formatDate, formatNumber, monthKey } from '../lib/format'
+import { formatCurrency, formatDate, formatNumber } from '../lib/format'
 import { StatCard } from '../components/StatCard'
 import { Card, Badge } from '../components/ui'
 import { DateRangeFilter, defaultRange } from '../components/DateRangeFilter'
@@ -96,8 +96,8 @@ export function Dashboard({ onNavigate }: { onNavigate: (p: PageKey) => void }) 
   const monthlyRentPotential = dataset.units.reduce((s, u) => s + u.rent_amount, 0)
   const cashMargin = totals.income > 0 ? (totals.net / totals.income) * 100 : 0
 
-  const lastMonthKey = series.length ? series[series.length - 1].key : monthKey(range.end)
-  const prevMonth = series.find((s) => s.key === lastMonthKey) ?? null
+  // Most recent month in the range that actually has income recorded.
+  const latestIncomeMonth = series.findLast((s) => s.income > 0) ?? null
 
   return (
     <div className="space-y-6">
@@ -138,23 +138,23 @@ export function Dashboard({ onNavigate }: { onNavigate: (p: PageKey) => void }) 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Total Income"
-          value={formatCurrency(totals.income)}
+          value={`+${formatCurrency(totals.income)}`}
           icon={<ArrowDownCircle className="size-5" />}
           accent="emerald"
-          hint={`${formatNumber(dataset.incomes.length)} income entries all-time`}
+          hint={`${formatNumber(dataset.incomes.length)} ${dataset.incomes.length === 1 ? 'income entry' : 'income entries'} all-time`}
         />
         <StatCard
           label="Total Expenses"
-          value={formatCurrency(totals.expense)}
+          value={`−${formatCurrency(totals.expense)}`}
           icon={<ArrowUpCircle className="size-5" />}
           accent="rose"
-          hint={`${formatNumber(dataset.expenses.length)} expense entries all-time`}
+          hint={`${formatNumber(dataset.expenses.length)} ${dataset.expenses.length === 1 ? 'expense entry' : 'expense entries'} all-time`}
         />
         <StatCard
           label="Net Operating Income"
-          value={formatCurrency(totals.net)}
+          value={`${totals.net >= 0 ? '+' : '−'}${formatCurrency(Math.abs(totals.net))}`}
           icon={<Scale className="size-5" />}
-          accent={totals.net >= 0 ? 'indigo' : 'rose'}
+          accent={totals.net >= 0 ? 'violet' : 'rose'}
           hint={
             <span className={cashMargin >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
               {cashMargin >= 0 ? '+' : ''}
@@ -174,7 +174,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (p: PageKey) => void }) 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Card
           title="Monthly Income vs. Expenses"
-          subtitle="Bars show cash in and out; line shows net"
+          subtitle="Shaded areas show cash in and out; the line tracks net"
           className="xl:col-span-2"
         >
           {series.length === 0 ? (
@@ -186,7 +186,14 @@ export function Dashboard({ onNavigate }: { onNavigate: (p: PageKey) => void }) 
           )}
         </Card>
         <div className="grid grid-cols-1 gap-4">
-          <Card title="Income by Category" subtitle={`Latest month: ${prevMonth ? formatCurrency(prevMonth.income) : '—'}`}>
+          <Card
+            title="Income by Category"
+            subtitle={
+              latestIncomeMonth
+                ? `Latest month: ${latestIncomeMonth.label} · +${formatCurrency(latestIncomeMonth.income)}`
+                : 'No income in this period'
+            }
+          >
             <CategoryDonutChart data={incomeSlices} colors={INCOME_CATEGORY_COLORS} height={170} />
           </Card>
           <Card title="Expenses by Category">
@@ -222,7 +229,8 @@ export function Dashboard({ onNavigate }: { onNavigate: (p: PageKey) => void }) 
                 </div>
                 <div className="text-right">
                   <p className={`text-sm font-bold ${row.net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {formatCurrency(row.net)}
+                    {row.net >= 0 ? '+' : '−'}
+                    {formatCurrency(Math.abs(row.net))}
                   </p>
                   <p className="text-[10px] uppercase tracking-wide text-slate-400">Net ({rangeLabel(range).length > 14 ? 'period' : rangeLabel(range)})</p>
                 </div>
