@@ -86,19 +86,26 @@ function NavItems({
 }
 
 function ConnectionChip() {
-  const { connection } = useData()
-  const supabase = connection?.mode === 'supabase' && connection.ok
+  const { mode, connection } = useData()
+  // The chip reflects the actual data source (mode), not just whether the last
+  // connection probe succeeded — so it never claims "Local demo mode" while the
+  // app is configured for Supabase (e.g. while the check is in flight or failing).
+  const supabase = mode === 'supabase'
+  const connected = supabase && connection?.ok
+  const label = connected ? 'Supabase connected' : supabase ? 'Checking connection…' : 'Local demo mode'
   return (
     <div className="px-3">
       <div
         className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium ${
-          supabase
+          connected
             ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-            : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+            : supabase
+              ? 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+              : 'border-slate-500/30 bg-slate-500/10 text-slate-400'
         }`}
       >
-        {supabase ? <Cloud className="size-3.5" /> : <Database className="size-3.5" />}
-        <span className="truncate">{supabase ? 'Supabase connected' : 'Local demo mode'}</span>
+        {connected || supabase ? <Cloud className="size-3.5" /> : <Database className="size-3.5" />}
+        <span className="truncate">{label}</span>
       </div>
     </div>
   )
