@@ -26,6 +26,7 @@ import {
   insertRow,
   loadDataset,
   removeRow,
+  restoreData,
   seedDemoData,
   testConnection,
   type ConnectionStatus,
@@ -95,6 +96,7 @@ export interface DataContextValue {
   // Demo data management
   seedDemo: () => Promise<void>
   clearAll: () => Promise<void>
+  restore: (dataset: Dataset) => Promise<void>
 
   // Lookups
   propertyById: (id: string | null | undefined) => Property | undefined
@@ -323,6 +325,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     await refresh()
   }, [refresh])
 
+  const restore = useCallback(async (ds: Dataset) => {
+    await restoreData(ds)
+    await refresh()
+  }, [refresh])
+
   // ---- Receipt resolution --------------------------------------------------
   // Returns a displayable URL: data URLs (local mode) and legacy https URLs
   // pass through; Supabase storage paths resolve to cached signed URLs.
@@ -379,6 +386,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     uploadReceipt,
     seedDemo,
     clearAll,
+    restore,
     ...lookups,
   }
   // receiptVersion is consumed here so the context value (and therefore all

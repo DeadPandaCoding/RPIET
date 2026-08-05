@@ -1,28 +1,39 @@
-import { useState } from 'react'
+import { useRef, useState, type ChangeEvent } from 'react'
 import {
   Cloud,
   Database,
+  Download,
   FileCode2,
   KeyRound,
+  Lock,
   LogOut,
   RefreshCw,
   Server,
   ShieldCheck,
   Sparkles,
   Trash2,
+  Upload,
   UserRound,
 } from 'lucide-react'
 import { useData } from '../store/DataContext'
 import { useToast } from '../store/toast'
 import { formatNumber } from '../lib/format'
-import { Badge, Button, Card, ConfirmDialog } from '../components/ui'
+import { decryptBackup, encryptBackup } from '../lib/backup'
+import type { Dataset } from '../lib/types'
+import { Badge, Button, Card, ConfirmDialog, Field, Input } from '../components/ui'
 
 export function Settings() {
-  const { connection, dataset, seedDemo, clearAll, refresh, mode, user, signOut } = useData()
+  const { connection, dataset, seedDemo, clearAll, refresh, mode, user, signOut, restore } =
+    useData()
   const { toast } = useToast()
   const [testing, setTesting] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
   const [seeding, setSeeding] = useState(false)
+  const [backupPassword, setBackupPassword] = useState('')
+  const [busy, setBusy] = useState<'backup' | 'restore' | null>(null)
+  const [pendingRestore, setPendingRestore] = useState<Dataset | null>(null)
+  const [confirmRestore, setConfirmRestore] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const supabase = mode === 'supabase'
 
@@ -64,6 +75,50 @@ export function Settings() {
       toast('Signed out', 'success')
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Sign out failed', 'error')
+    }
+  }
+
+  const runBackup = async () => {
+    const password = backupPassword.trim()
+    if (password.length < 4) {
+      toast('Enter a password of at least 4 characters', 'error')
+      return
+    }
+    setBusy('backup')
+    try {
+      const blob = await encryptBackup(dataset, password)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `propertyledger-backup-${new Date().toISOString().slice(0, 10)}.plbk`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast('Backup downloaded — keep the file somewhere safe', 'success')
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Backup failed', 'error')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const onPickFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    const password = backupPassword.trim()
+    if (!password) {
+      toast('Enter the password this backup was encrypted with', 'error')
+      return
+    }
+    setBusy('restore')
+    try {
+      const ds = await decryptBackup(file, password)
+      setPendingRestore(ds)
+      setConfirmRestore(true)
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Restore failed', 'error')
+    } finally {
+      setBusy(null)
     }
   }
 
@@ -257,6 +312,79 @@ export function Settings() {
           )}
         </div>
       </Card>
+
+      {/* Backup & restore */}
+      <Card
+        title="Backup & Restore"
+        subtitle="Download an encrypted copy of all your data, or restore from one"
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <Field
+              label="Backup password"
+              hint="Used to encrypt the file on download and to unlock it on restore."
+              className="flex-1"
+            >
+              <Input
+                type="password"
+                value={backupPassword}
+                onChange={(e) => setBackupPassword(e.target.value)}
+                placeholder="Enter a password…"
+                autoComplete="off"
+              />
+            </Field>
+            <Button variant="primary" onClick={() => void runBackup()} disabled={busy !== null}>
+              <Download className="size-4" />
+              {busy === 'backup' ? 'Encrypting…' : 'Download backup'}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={busy !== null}
+            >
+              <Upload className="size-4" />
+              {busy === 'restore' ? 'Restoring…' : 'Restore backup'}
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".plbk,application/octet-stream"
+              className="hidden"
+              onChange={(e) => void onPickFile(e)}
+            />
+          </div>
+          <p className="flex items-start gap-1.5 text-xs leading-relaxed text-slate-500">
+            <Lock className="mt-0.5 size-3.5 shrink-0" />
+            The file is encrypted with AES-256 in your browser before it is downloaded — it
+            cannot be opened without your password. Keep a copy somewhere safe (Google Drive,
+            USB drive, or another device) so you can always recover your data, even if the site
+            or the database is ever unavailable.
+          </p>
+        </div>
+      </Card>
+
+      <ConfirmDialog
+        open={confirmRestore}
+        onClose={() => setConfirmRestore(false)}
+        onConfirm={async () => {
+          if (!pendingRestore) return
+          try {
+            await restore(pendingRestore)
+            toast('Backup restored successfully', 'success')
+          } catch (err) {
+            toast(err instanceof Error ? err.message : 'Restore failed', 'error')
+          }
+        }}
+        title="Restore this backup?"
+        message={
+          <>
+            This will <b>replace all current data</b>{' '}
+            {supabase ? 'in your Supabase project' : 'stored in this browser'} with the contents
+            of the backup file. This cannot be undone.
+          </>
+        }
+        confirmLabel="Restore data"
+      />
 
       <ConfirmDialog
         open={confirmClear}

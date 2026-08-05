@@ -269,3 +269,38 @@ export async function clearAllData(): Promise<void> {
   wipeAllLocal()
   saveWholeDataset({ properties: [], units: [], tenants: [], incomes: [], expenses: [] })
 }
+
+// ---------------------------------------------------------------------------
+// Full backup restore
+// ---------------------------------------------------------------------------
+
+/**
+ * Replaces the entire dataset with a restored backup. In Supabase mode the
+ * tables are wiped (FK order) and re-inserted (FK order) with the backup rows,
+ * with ownership re-assigned to the signed-in user (rows are tagged with the
+ * current session's auth.uid() instead of the original owner).
+ */
+export async function restoreData(dataset: Dataset): Promise<void> {
+  const sb = getSupabase()
+  if (!sb) {
+    saveWholeDataset(dataset)
+    return
+  }
+  for (const table of ['incomes', 'expenses', 'tenants', 'units', 'properties'] as TableName[]) {
+    const { error } = await sb.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000')
+    if (error) throw new Error(error.message)
+  }
+  for (const table of ['properties', 'units', 'tenants', 'incomes', 'expenses'] as TableName[]) {
+    const rows = dataset[table]
+    if (!rows.length) continue
+    // Let the database assign ownership to the current signed-in user.
+    const owned = rows.map((r) => {
+      const { user_id: _user_id, ...rest } = r as unknown as Record<string, unknown> & {
+        user_id?: unknown
+      }
+      return rest
+    })
+    const { error } = await sb.from(table).insert(owned as Record<string, unknown>[])
+    if (error) throw new Error(error.message)
+  }
+}
