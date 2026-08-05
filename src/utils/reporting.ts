@@ -290,7 +290,12 @@ export function tenantPaymentHistory(
 // ---------------------------------------------------------------------------
 
 function csvEscape(value: string | number): string {
-  const s = String(value)
+  let s = String(value)
+  // CSV / formula-injection guard: a cell starting with = + - @ (or tab/CR)
+  // is interpreted by Excel as a formula. Prefix it with a single quote so
+  // it opens as plain text. Export amounts never start with these characters,
+  // so numeric columns are unaffected.
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 
