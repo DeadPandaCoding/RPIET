@@ -190,7 +190,7 @@ export function SignIn() {
                       className={`rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
                         mode === m
                           ? 'bg-white text-slate-900 shadow-sm dark:bg-indigo-900 dark:text-white'
-                          : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                          : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
                       }`}
                     >
                       {m === 'signin' ? 'Sign in' : 'Create account'}

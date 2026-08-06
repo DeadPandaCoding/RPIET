@@ -182,7 +182,7 @@ export function Reports() {
             className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition-all sm:flex-none ${
               tab === t.key
                 ? 'bg-white text-slate-900 shadow-sm dark:bg-indigo-900 dark:text-white'
-                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white'
             }`}
           >
             {t.label}
