@@ -57,8 +57,14 @@ export function ResetPassword() {
         <div className="mb-2 flex flex-col items-center text-center">
           {/* Navy logo on light, ivory logo on navy — no white plate. The logo
               is the hero of the landing page, so it leads large. */}
-          <img src="/valora-logo.png" alt="" className="animate-entrance-settle h-32 w-auto sm:h-36 dark:hidden" />
-          <img src="/valora-logo-dark.png" alt="" className="animate-entrance-settle hidden h-32 w-auto sm:h-36 dark:block" />
+          <span className="animate-entrance-settle inline-block">
+            {/* Hover lift lives on its own span so it never clashes with the
+                entrance animation's held end-state transform */}
+            <span className="inline-block transition-transform duration-300 ease-out hover:-translate-y-1 hover:drop-shadow-[0_8px_24px_rgba(140,107,49,0.35)] motion-reduce:transition-none motion-reduce:hover:transform-none">
+              <img src="/valora-logo.png" alt="" className="h-32 w-auto sm:h-36 dark:hidden" />
+              <img src="/valora-logo-dark.png" alt="" className="hidden h-32 w-auto sm:h-36 dark:block" />
+            </span>
+          </span>
           <p className="animate-entrance-rise mt-1.5 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-400 [animation-delay:0.15s]">Private Portfolio</p>
           <p className="animate-entrance-rise mt-0.5 text-sm text-slate-500 [animation-delay:0.25s]">Choose a new password for your account</p>
         </div>

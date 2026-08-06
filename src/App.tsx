@@ -18,8 +18,12 @@ function LoadingScreen() {
     <div className="flex min-h-screen flex-col items-center justify-center overflow-hidden bg-canvas px-4 py-2">
       {/* Matches the compact auth landing rhythm: snug logo, no dead space */}
       <div className="animate-entrance-settle">
-        <img src="/valora-logo.png" alt="Valora" className="h-20 w-auto dark:hidden" />
-        <img src="/valora-logo-dark.png" alt="Valora" className="hidden h-20 w-auto dark:block" />
+        {/* Hover lift lives on its own span so it never clashes with the
+            entrance animation's held end-state transform */}
+        <span className="inline-block transition-transform duration-300 ease-out hover:-translate-y-1 hover:drop-shadow-[0_8px_24px_rgba(140,107,49,0.35)] motion-reduce:transition-none motion-reduce:hover:transform-none">
+          <img src="/valora-logo.png" alt="Valora" className="h-20 w-auto dark:hidden" />
+          <img src="/valora-logo-dark.png" alt="Valora" className="hidden h-20 w-auto dark:block" />
+        </span>
       </div>
       <p className="animate-entrance-rise mt-2 text-center text-xs font-medium uppercase tracking-[0.25em] text-slate-400 [animation-delay:0.15s]">
         Loading your portfolio…
