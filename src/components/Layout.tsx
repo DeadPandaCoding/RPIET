@@ -47,7 +47,7 @@ function Logo() {
         <img
           src="/valora-logo-dark.png"
           alt="Valora"
-          className="h-10 w-auto transition-transform duration-300 ease-out hover:-translate-y-0.5 hover:drop-shadow-[0_6px_18px_rgba(252,231,191,0.25)] motion-reduce:transition-none motion-reduce:hover:transform-none"
+          className="h-14 w-auto transition-transform duration-300 ease-out hover:-translate-y-0.5 hover:drop-shadow-[0_6px_18px_rgba(252,231,191,0.25)] motion-reduce:transition-none motion-reduce:hover:transform-none"
         />
       </div>
       <div className="mt-2 text-center text-[10px] font-medium uppercase tracking-[0.3em] text-slate-400">
@@ -128,7 +128,7 @@ function UserChip() {
           {email[0]?.toUpperCase() ?? '?'}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-semibold text-slate-200">{email}</p>
+          <p className="truncate text-sm font-semibold text-slate-100">{email}</p>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400">Owner</p>
         </div>
         <button
