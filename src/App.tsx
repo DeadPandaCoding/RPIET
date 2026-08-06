@@ -15,14 +15,15 @@ import { Settings } from './pages/Settings'
 
 function LoadingScreen() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-canvas">
-      <div className="animate-pulse">
-        <img src="/valora-logo.png" alt="Valora" className="h-14 w-auto dark:hidden" />
-        <img src="/valora-logo-dark.png" alt="Valora" className="hidden h-14 w-auto dark:block" />
+    <div className="flex min-h-screen flex-col items-center justify-center overflow-hidden bg-canvas px-4 py-2">
+      {/* Matches the compact auth landing rhythm: snug logo, no dead space */}
+      <div className="animate-entrance-settle">
+        <img src="/valora-logo.png" alt="Valora" className="h-20 w-auto dark:hidden" />
+        <img src="/valora-logo-dark.png" alt="Valora" className="hidden h-20 w-auto dark:block" />
       </div>
-      <div className="text-center">
-        <p className="text-xs text-slate-400">Loading your portfolio…</p>
-      </div>
+      <p className="animate-entrance-rise mt-2 text-center text-xs font-medium uppercase tracking-[0.25em] text-slate-400 [animation-delay:0.15s]">
+        Loading your portfolio…
+      </p>
     </div>
   )
 }
