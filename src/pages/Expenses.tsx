@@ -328,7 +328,7 @@ export function Expenses() {
                             <span className="text-xs text-slate-400">…</span>
                           )
                         ) : (
-                          <span className="text-slate-300">—</span>
+                          <span className="text-slate-300 dark:text-slate-500">—</span>
                         )}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-right font-bold text-rose-600">−{formatCurrency(e.amount)}</td>
@@ -337,7 +337,7 @@ export function Expenses() {
                           <Button variant="ghost" size="sm" onClick={() => setModal({ open: true, editing: e })}>
                             <Pencil className="size-3.5" />
                           </Button>
-                          <Button variant="ghost" size="sm" className="text-rose-600 hover:bg-rose-50" onClick={() => setDeleting(e)}>
+                          <Button variant="ghost" size="sm" className="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10" onClick={() => setDeleting(e)}>
                             <Trash2 className="size-3.5" />
                           </Button>
                         </div>

@@ -269,7 +269,7 @@ export function Tenants() {
                 <Button variant="ghost" size="sm" onClick={() => setModal({ open: true, editing: t })}>
                   <Pencil className="size-3.5" /> Edit
                 </Button>
-                <Button variant="ghost" size="sm" className="text-rose-600 hover:bg-rose-50" onClick={() => setDeleting(t)}>
+                <Button variant="ghost" size="sm" className="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10" onClick={() => setDeleting(t)}>
                   <Trash2 className="size-3.5" /> Delete
                 </Button>
               </div>

@@ -80,6 +80,13 @@
   --chart-tick: #94a3b8;
   --chart-tick-strong: #cbd5e1;
 
+  /* Brighten semantic 600-level text/figures so they stay legible on the
+     navy surface (bg-600 buttons already carry their own dark overrides). */
+  --color-emerald-600: #34d399;
+  --color-rose-600: #fb7185;
+  --color-amber-600: #fbbf24;
+  --color-sky-600: #38bdf8;
+
   /* Focus ring offsets should sit on the canvas, not a white halo */
   --tw-ring-offset-color: var(--color-canvas);
 }

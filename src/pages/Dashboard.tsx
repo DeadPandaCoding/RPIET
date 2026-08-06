@@ -102,7 +102,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (p: PageKey) => void }) 
   return (
     <div className="space-y-6">
       {inLocalMode && !bannerDismissed && (
-        <div className="animate-fade-in-up flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <div className="animate-fade-in-up flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
           <CloudOff className="mt-0.5 size-5 shrink-0 text-amber-600" />
           <div className="flex-1 text-sm">
             <p className="font-bold text-amber-900">Running on local browser storage</p>
@@ -254,7 +254,9 @@ export function Dashboard({ onNavigate }: { onNavigate: (p: PageKey) => void }) 
                 <div key={`${r.kind}-${r.id}`} className="flex items-center gap-3 py-2.5">
                   <div
                     className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${
-                      r.kind === 'income' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+                      r.kind === 'income'
+                        ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300'
+                        : 'bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300'
                     }`}
                   >
                     {r.kind === 'income' ? (

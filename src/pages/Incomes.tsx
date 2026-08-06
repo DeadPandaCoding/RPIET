@@ -280,7 +280,7 @@ export function Incomes() {
                           <Button variant="ghost" size="sm" onClick={() => setModal({ open: true, editing: i })}>
                             <Pencil className="size-3.5" />
                           </Button>
-                          <Button variant="ghost" size="sm" className="text-rose-600 hover:bg-rose-50" onClick={() => setDeleting(i)}>
+                          <Button variant="ghost" size="sm" className="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10" onClick={() => setDeleting(i)}>
                             <Trash2 className="size-3.5" />
                           </Button>
                         </div>

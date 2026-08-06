@@ -23,9 +23,9 @@ const buttonVariants: Record<ButtonVariant, string> = {
     'bg-surface text-slate-700 border border-slate-300 hover:bg-slate-50 focus-visible:ring-slate-400 dark:hover:bg-slate-200',
   ghost: 'text-slate-600 hover:bg-slate-100 focus-visible:ring-slate-300',
   danger:
-    'bg-rose-600 text-white hover:bg-rose-700 shadow-sm shadow-rose-600/20 focus-visible:ring-rose-500 dark:bg-rose-500 dark:hover:bg-rose-400',
+    'bg-rose-600 text-white hover:bg-rose-700 shadow-sm shadow-rose-600/20 focus-visible:ring-rose-500 dark:bg-rose-500 dark:text-rose-950 dark:hover:bg-rose-400',
   success:
-    'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 focus-visible:ring-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-400',
+    'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 focus-visible:ring-emerald-500 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400',
 }
 
 const buttonSizes: Record<ButtonSize, string> = {
@@ -234,7 +234,7 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50/60 px-6 py-14 text-center">
-      {icon && <div className="mb-3 text-slate-300">{icon}</div>}
+      {icon && <div className="mb-3 text-slate-300 dark:text-slate-500">{icon}</div>}
       <h3 className="text-sm font-bold text-slate-700">{title}</h3>
       {description && <p className="mt-1 max-w-sm text-xs text-slate-500">{description}</p>}
       {action && <div className="mt-4">{action}</div>}

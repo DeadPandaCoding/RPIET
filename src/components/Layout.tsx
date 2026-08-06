@@ -74,7 +74,7 @@ function NavItems({
                 : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
             }`}
           >
-            <span className={active ? 'text-violet-300' : 'text-slate-500 group-hover:text-slate-300'}>
+            <span className={active ? 'text-violet-300' : 'text-slate-500 group-hover:text-slate-300 dark:group-hover:text-slate-200'}>
               {meta.icon}
             </span>
             {meta.label}

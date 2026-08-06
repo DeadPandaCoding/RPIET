@@ -251,7 +251,7 @@ export function Properties() {
               <div className="flex flex-wrap items-center gap-4 p-5">
                 <button
                   onClick={() => toggleExpand(p.id)}
-                  className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition-colors hover:bg-indigo-100"
+                  className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition-colors hover:bg-indigo-100 dark:bg-indigo-900/60 dark:text-indigo-300 dark:hover:bg-indigo-900"
                   aria-label={isOpen ? 'Collapse' : 'Expand'}
                 >
                   {isOpen ? <ChevronDown className="size-5" /> : <ChevronRight className="size-5" />}
@@ -289,7 +289,7 @@ export function Properties() {
                   <Button variant="ghost" size="sm" onClick={() => setPropModal({ open: true, editing: p })}>
                     <Pencil className="size-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="text-rose-600 hover:bg-rose-50" onClick={() => setDeleteProp(p)}>
+                  <Button variant="ghost" size="sm" className="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10" onClick={() => setDeleteProp(p)}>
                     <Trash2 className="size-4" />
                   </Button>
                 </div>
@@ -329,7 +329,7 @@ export function Properties() {
                               <Button variant="ghost" size="sm" onClick={() => setUnitModal({ open: true, propertyId: p.id, editing: u })}>
                                 <Pencil className="size-3.5" />
                               </Button>
-                              <Button variant="ghost" size="sm" className="text-rose-600 hover:bg-rose-50" onClick={() => setDeleteUnit(u)}>
+                              <Button variant="ghost" size="sm" className="text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10" onClick={() => setDeleteUnit(u)}>
                                 <Trash2 className="size-3.5" />
                               </Button>
                             </div>
