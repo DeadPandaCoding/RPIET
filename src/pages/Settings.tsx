@@ -230,7 +230,7 @@ export function Settings() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="animate-fade-in-up space-y-4">
       {/* Account & security */}
       {supabase && (
         <Card

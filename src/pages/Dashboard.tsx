@@ -127,7 +127,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (p: PageKey) => void }) 
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="animate-fade-in-up flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold text-slate-500">Portfolio summary</p>
           <h2 className="font-display text-xl font-semibold tracking-tight text-slate-900">{rangeLabel(range)}</h2>
@@ -135,7 +135,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (p: PageKey) => void }) 
         <DateRangeFilter range={range} onChange={setRange} />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="animate-fade-in-up grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 [animation-delay:0.1s]">
         <StatCard
           label="Total Income"
           value={`+${formatCurrency(totals.income)}`}
@@ -171,7 +171,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (p: PageKey) => void }) 
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+      <div className="animate-fade-in-up grid grid-cols-1 gap-4 xl:grid-cols-3 [animation-delay:0.2s]">
         <Card
           title="Monthly Income vs. Expenses"
           subtitle="Shaded areas show cash in and out; the line tracks net"
@@ -202,7 +202,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (p: PageKey) => void }) 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+      <div className="animate-fade-in-up grid grid-cols-1 gap-4 xl:grid-cols-3 [animation-delay:0.3s]">
         <Card title="Property Snapshot" className="xl:col-span-1">
           <div className="space-y-3">
             {perf.length === 0 && (
@@ -286,7 +286,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (p: PageKey) => void }) 
         </Card>
       </div>
 
-      <div className="flex items-center gap-2 text-xs text-slate-400">
+      <div className="animate-fade-in-up flex items-center gap-2 text-xs text-slate-400 [animation-delay:0.4s]">
         <ReceiptText className="size-4" />
         Figures reflect transactions dated within the selected period.
       </div>

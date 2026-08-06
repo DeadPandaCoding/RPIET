@@ -217,7 +217,7 @@ export function Properties() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="animate-fade-in-up space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-500">
           {formatNumber(dataset.properties.length)} properties · {formatNumber(dataset.units.length)} units

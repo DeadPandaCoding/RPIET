@@ -133,7 +133,7 @@ export function Reports() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="animate-fade-in-up space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <DateRangeFilter range={range} onChange={setRange} />
         <div className="flex items-center gap-2">

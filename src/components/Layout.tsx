@@ -215,7 +215,9 @@ export function Layout({
         </div>
       )}
 
-      {/* Main content */}
+      {/* Main content — keyed by page so the luxury entrance replays on
+          every navigation. The header stays outside the animated wrapper so
+          its sticky positioning is never broken by a parent transform. */}
       <div className="lg:pl-64">
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-surface/85 backdrop-blur">
           <div className="flex items-center gap-3 px-4 py-3.5 sm:px-6 lg:px-8">
@@ -238,7 +240,11 @@ export function Layout({
             <ThemeToggle className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white" />
           </div>
         </header>
-        <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        {/* keyed by page so per-section entrance staggers (e.g. the
+            Dashboard's) replay on every navigation */}
+        <main key={page} className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          {children}
+        </main>
       </div>
     </div>
   )

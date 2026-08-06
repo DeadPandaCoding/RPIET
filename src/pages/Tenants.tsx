@@ -173,7 +173,7 @@ export function Tenants() {
   const today = todayISO()
 
   return (
-    <div className="space-y-4">
+    <div className="animate-fade-in-up space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
