@@ -57,13 +57,13 @@ export function ResetPassword() {
         <div className="mb-2 flex flex-col items-center text-center">
           {/* Navy logo on light, ivory logo on navy — no white plate. The logo
               is the hero of the landing page, so it leads large. */}
-          <img src="/valora-logo.png" alt="" className="h-32 w-auto sm:h-36 dark:hidden" />
-          <img src="/valora-logo-dark.png" alt="" className="hidden h-32 w-auto sm:h-36 dark:block" />
-          <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-400">Private Portfolio</p>
-          <p className="mt-0.5 text-sm text-slate-500">Choose a new password for your account</p>
+          <img src="/valora-logo.png" alt="" className="animate-entrance-settle h-32 w-auto sm:h-36 dark:hidden" />
+          <img src="/valora-logo-dark.png" alt="" className="animate-entrance-settle hidden h-32 w-auto sm:h-36 dark:block" />
+          <p className="animate-entrance-rise mt-1.5 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-400 [animation-delay:0.15s]">Private Portfolio</p>
+          <p className="animate-entrance-rise mt-0.5 text-sm text-slate-500 [animation-delay:0.25s]">Choose a new password for your account</p>
         </div>
 
-        <div className="animate-modal-pop rounded-2xl border border-slate-200 bg-surface p-6 shadow-xl shadow-black/5 dark:border-slate-700/70 dark:shadow-black/30 sm:p-8">
+        <div className="animate-entrance-lift rounded-2xl border border-slate-200 bg-surface p-6 shadow-xl shadow-black/5 dark:border-slate-700/70 dark:shadow-black/30 sm:p-8 [animation-delay:0.35s]">
           <form onSubmit={(e) => void submit(e)} className="space-y-4">
             <div className="flex items-center gap-2.5 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2.5 text-xs font-medium text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-900/60 dark:text-indigo-200">
               <KeyRound className="size-4 shrink-0" />
