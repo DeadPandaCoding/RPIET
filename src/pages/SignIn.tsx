@@ -145,11 +145,11 @@ export function SignIn() {
               is the hero of the landing page, so it leads large. */}
           <img src="/valora-logo.png" alt="" className="h-36 w-auto dark:hidden" />
           <img src="/valora-logo-dark.png" alt="" className="hidden h-36 w-auto dark:block" />
-          <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-400">Private Portfolio</p>
-          <p className="mt-1.5 text-sm text-slate-500">Sign in to manage your rental portfolio</p>
+          <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-400">Private Portfolio</p>
+          <p className="mt-1 text-sm text-slate-500">Sign in to manage your rental portfolio</p>
         </div>
 
-        <div className="animate-modal-pop rounded-2xl border border-slate-200 bg-surface p-5 shadow-xl shadow-black/5 dark:border-slate-700/70 dark:shadow-black/30 sm:p-6">
+        <div className="animate-modal-pop rounded-2xl border border-slate-200 bg-surface p-6 shadow-xl shadow-black/5 dark:border-slate-700/70 dark:shadow-black/30 sm:p-8">
           {confirmed ? (
             <div className="flex flex-col items-center py-6 text-center">
               <CheckCircle2 className="mb-3 size-12 text-emerald-500" />
@@ -175,7 +175,7 @@ export function SignIn() {
             <>
               {/* Mode toggle (hidden while resetting a password) */}
               {mode !== 'reset' ? (
-                <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1">
+                <div className="mb-6 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1">
                   {(['signin', 'signup'] as const).map((m) => (
                     <button
                       key={m}
@@ -201,7 +201,7 @@ export function SignIn() {
                 </button>
               )}
 
-              <form onSubmit={(e) => void submit(e)} className="space-y-3">
+              <form onSubmit={(e) => void submit(e)} className="space-y-4">
                 <label className="block">
                   <span className="mb-1.5 block text-xs font-semibold text-slate-600">Email</span>
                   <div className="relative">
@@ -324,7 +324,7 @@ export function SignIn() {
                 </Button>
               </form>
 
-              <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-xs text-slate-400">
+              <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-xs text-slate-400">
                 <ShieldCheck className="size-3.5" />
                 Protected by Supabase Auth — your data is private to your account
               </p>
