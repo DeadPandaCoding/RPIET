@@ -18,6 +18,21 @@ browser-storage demo mode so you can start immediately without any setup.
 - **Date filters** — Month, Quarter, Year, or custom range (great for tax season)
 - **Exports** — download reports as CSV or print-ready PDF (jsPDF)
 
+## What's new (recently shipped)
+
+### Brand & design
+- **Valora rebrand** — private-bank aesthetic: ink-navy primary, champagne-gold accent, warm ivory canvas. Premium display serif (**Fraunces**) for headline figures/wordmark accents alongside **Inter** for UI text.
+- **Dark mode** — the Valora navy is the primary dark surface; every card, input, and modal flips via a single `bg-surface` token. Includes a full dark-mode contrast pass (brightened semantic figures, navy-tinted chips/badges, dark-aware toasts and hover states).
+
+### Motion & polish
+- **Luxury entrance choreography** — the auth landing (logo → tagline → card), the loading screen, and every in-app page reveal with staggered, composed entrance animations (soft settle/rise/lift, gentle easing). The Dashboard staggers section-by-section (stat cards → charts → snapshot) and replays on navigation.
+- **Logo hover interaction** — the Valora mark (auth, loading, and sidebar) gently lifts with a soft champagne glow on hover; all motion respects `prefers-reduced-motion`.
+- **Compact auth landing** — the logo is the hero (up to 144px tall) while the page fits one screen without scrolling at phone, tablet, and laptop sizes.
+
+### Accessibility & robustness
+- **Form-field a11y** — all shared inputs/selects/textareas auto-assign stable ids, eliminating the browser's "form field should have an id or name" warning.
+- **Dark-mode contrast audit** — every page reviewed in dark mode in the browser; no remaining low-contrast text or clashing pastel boxes.
+
 ## Quick start
 
 ```bash
@@ -75,3 +90,5 @@ supabase/
 | `npm run build`  | Type-check and build for prod  |
 | `npm run lint`   | Run oxlint                    |
 | `npm run preview`| Preview the production build  |
+| `npm run smoke`  | Run the data/reporting smoke tests |
+| `npm run scan:secrets` | Scan for accidentally committed secrets |
