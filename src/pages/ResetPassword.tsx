@@ -48,19 +48,19 @@ export function ResetPassword() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-canvas px-4 py-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-canvas px-4 py-2">
       <div className="pointer-events-none absolute -left-32 -top-32 size-96 rounded-full bg-indigo-300/20 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -right-24 size-[28rem] rounded-full bg-violet-300/20 blur-3xl" />
 
       <div className="relative w-full max-w-md">
         <h1 className="sr-only">Valora</h1>
-        <div className="mb-4 flex flex-col items-center text-center">
+        <div className="mb-2 flex flex-col items-center text-center">
           {/* Navy logo on light, ivory logo on navy — no white plate. The logo
               is the hero of the landing page, so it leads large. */}
-          <img src="/valora-logo.png" alt="" className="h-36 w-auto dark:hidden" />
-          <img src="/valora-logo-dark.png" alt="" className="hidden h-36 w-auto dark:block" />
-          <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-400">Private Portfolio</p>
-          <p className="mt-1 text-sm text-slate-500">Choose a new password for your account</p>
+          <img src="/valora-logo.png" alt="" className="h-32 w-auto sm:h-36 dark:hidden" />
+          <img src="/valora-logo-dark.png" alt="" className="hidden h-32 w-auto sm:h-36 dark:block" />
+          <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-400">Private Portfolio</p>
+          <p className="mt-0.5 text-sm text-slate-500">Choose a new password for your account</p>
         </div>
 
         <div className="animate-modal-pop rounded-2xl border border-slate-200 bg-surface p-6 shadow-xl shadow-black/5 dark:border-slate-700/70 dark:shadow-black/30 sm:p-8">
