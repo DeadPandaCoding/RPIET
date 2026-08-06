@@ -76,10 +76,10 @@ function NavItems({
             className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
               active
                 ? 'bg-white/10 text-white shadow-inner'
-                : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                : 'text-slate-400 hover:bg-white/5 hover:text-white'
             }`}
           >
-            <span className={active ? 'text-violet-300' : 'text-slate-500 group-hover:text-slate-300 dark:group-hover:text-slate-200'}>
+            <span className={active ? 'text-violet-300' : 'text-slate-400 group-hover:text-white'}>
               {meta.icon}
             </span>
             {meta.label}
@@ -128,7 +128,10 @@ function UserChip() {
           {email[0]?.toUpperCase() ?? '?'}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-slate-100">{email}</p>
+          {/* text-white, not text-slate-100: the dark theme remaps slate-100 to
+              a deep navy that would make the email invisible on this navy
+              sidebar. The sidebar is always navy, so use a fixed bright tone. */}
+          <p className="truncate text-sm font-semibold text-white">{email}</p>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400">Owner</p>
         </div>
         <button
@@ -172,8 +175,8 @@ export function Layout({
         <div className="px-3">
           <ThemeToggle
             showLabel
-            iconClassName="size-5 text-slate-500"
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition-all hover:bg-white/5 hover:text-slate-200"
+            iconClassName="size-5 text-slate-400"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400 transition-all hover:bg-white/5 hover:text-white"
           />
         </div>
         <div className="px-3">
@@ -182,10 +185,10 @@ export function Layout({
             className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
               page === 'settings'
                 ? 'bg-white/10 text-white'
-                : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                : 'text-slate-400 hover:bg-white/5 hover:text-white'
             }`}
           >
-            <Settings className="size-5 text-slate-500" />
+            <Settings className="size-5 text-slate-400" />
             Settings
           </button>
         </div>
