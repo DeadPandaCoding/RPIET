@@ -1,4 +1,4 @@
-import { useEffect, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import { useEffect, useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 import { AlertTriangle, Moon, Sun, X } from 'lucide-react'
 import { getThemePref, setThemePref, type ThemePref } from '../lib/prefs'
 import { resolveTheme } from '../lib/theme'
@@ -169,20 +169,32 @@ export function Field({
 const fieldBase =
   'w-full rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/25 dark:focus:border-violet-400 dark:focus:ring-violet-500/25'
 
-export function Input({ className = '', ...props }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={`${fieldBase} ${className}`} {...props} />
+// Auto-assign a stable per-mount id to every field so Chrome's console stops
+// warning "A form field element should have an id or name attribute" for
+// label-wrapped inputs. Explicit ids (e.g. #auth-email) still win.
+let autoFieldId = 0
+const nextFieldId = () => `valora-field-${++autoFieldId}`
+const useAutoId = (explicit?: string) => useRef(explicit ?? nextFieldId()).current
+
+export function Input({ className = '', id, ...props }: InputHTMLAttributes<HTMLInputElement>) {
+  return <input id={useAutoId(id)} className={`${fieldBase} ${className}`} {...props} />
 }
 
-export function Select({ className = '', children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
+export function Select({ className = '', id, children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <select className={`${fieldBase} appearance-none bg-no-repeat pr-9 ${className}`} style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2364748b\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'m6 9 6 6 6-6\'/%3E%3C/svg%3E")', backgroundPosition: 'right 0.6rem center', backgroundRepeat: 'no-repeat' }} {...props}>
+    <select
+      id={useAutoId(id)}
+      className={`${fieldBase} appearance-none bg-no-repeat pr-9 ${className}`}
+      style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2364748b\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'m6 9 6 6 6-6\'/%3E%3C/svg%3E")', backgroundPosition: 'right 0.6rem center', backgroundRepeat: 'no-repeat' }}
+      {...props}
+    >
       {children}
     </select>
   )
 }
 
-export function Textarea({ className = '', ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea className={`${fieldBase} min-h-[76px] resize-y ${className}`} {...props} />
+export function Textarea({ className = '', id, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return <textarea id={useAutoId(id)} className={`${fieldBase} min-h-[76px] resize-y ${className}`} {...props} />
 }
 
 // ---------------------------------------------------------------------------

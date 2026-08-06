@@ -264,6 +264,7 @@ export function SignIn() {
                     <label className="flex cursor-pointer items-center gap-2.5">
                       <input
                         type="checkbox"
+                        name="remember"
                         checked={remember}
                         onChange={(e) => setRemember(e.target.checked)}
                         className="size-4 rounded border-slate-300 text-indigo-600 accent-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 dark:accent-violet-500"
