@@ -43,7 +43,12 @@ function Logo() {
       {/* The sidebar is always navy, so the ivory logo variant is used in
           both themes — no white plate needed. */}
       <div className="flex items-center justify-center px-3 py-3">
-        <img src="/valora-logo-dark.png" alt="Valora" className="h-10 w-auto" />
+        {/* Gentle lift + soft ivory-gold glow on the navy sidebar */}
+        <img
+          src="/valora-logo-dark.png"
+          alt="Valora"
+          className="h-10 w-auto transition-transform duration-300 ease-out hover:-translate-y-0.5 hover:drop-shadow-[0_6px_18px_rgba(252,231,191,0.25)] motion-reduce:transition-none motion-reduce:hover:transform-none"
+        />
       </div>
       <div className="mt-2 text-center text-[10px] font-medium uppercase tracking-[0.3em] text-slate-400">
         Private Portfolio
