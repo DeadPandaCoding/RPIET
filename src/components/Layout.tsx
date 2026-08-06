@@ -245,7 +245,6 @@ export function Layout({
             <Badge color="indigo" className="hidden sm:inline-flex">
               {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
             </Badge>
-            <ThemeToggle className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-white" />
           </div>
         </header>
         {/* keyed by page so per-section entrance staggers (e.g. the
