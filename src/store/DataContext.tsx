@@ -195,6 +195,47 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Session health check. Revoking a session (e.g. "Sign out other devices"
+  // or the Devices & Sessions Revoke button) only kills the refresh token —
+  // the already-issued access-token JWT stays valid for PostgREST until it
+  // expires (~1 hour), so a revoked device would otherwise look signed in and
+  // keep working until then. While the app is open or the tab becomes visible
+  // again, proactively refresh the token: if the session row is gone the
+  // refresh gets a 401 and supabase-js clears the local session and emits
+  // SIGNED_OUT (handled above), signing the user out here immediately.
+  // Offline/network failures do NOT sign the user out — supabase-js only
+  // clears the session on an auth 401, never on a fetch error.
+  useEffect(() => {
+    const sb = getSupabase()
+    if (!sb || authLoading) return
+    let lastCheck = 0
+    const check = async () => {
+      const now = Date.now()
+      // Throttle: focus/visibility events can fire rapidly (alt-tab spamming).
+      if (now - lastCheck < 30_000) return
+      lastCheck = now
+      const { data } = await sb.auth.getSession()
+      if (!data.session) return
+      await sb.auth.refreshSession()
+    }
+    const onActive = () => {
+      if (document.visibilityState === 'visible') void check()
+    }
+    void check()
+    // Periodic re-check while the tab is visible, so a device that stays in
+    // the foreground (never refocused) still gets signed out within a minute.
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void check()
+    }, 60_000)
+    window.addEventListener('focus', onActive)
+    document.addEventListener('visibilitychange', onActive)
+    return () => {
+      window.clearInterval(interval)
+      window.removeEventListener('focus', onActive)
+      document.removeEventListener('visibilitychange', onActive)
+    }
+  }, [authLoading])
+
   // ---- Data loading --------------------------------------------------------
   const cacheReceiptUrls = useCallback((ds: Dataset) => {
     const sb = getSupabase()
