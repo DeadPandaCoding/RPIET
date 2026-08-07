@@ -2,16 +2,27 @@
  * Vercel serverless function — Devices & Sessions.
  *
  * Lists the signed-in user's active Supabase Auth sessions and revokes
- * individual ones. Talks to GoTrue's ADMIN REST endpoints with the
- * service_role key, which must NEVER be exposed in the frontend bundle — it
- * lives here as a Vercel environment variable, server-side only.
+ * individual ones.
  *
  *   GET    /api/sessions            → { sessions: [...] }
  *   DELETE /api/sessions            → body { sid }  → { ok: true }
  *
+ * GoTrue has NO admin endpoint to enumerate a user's sessions (the old
+ * `/admin/users/{id}/sessions` route does not exist in its current API), so
+ * sessions are read straight from the `auth.sessions` table through PostgREST
+ * using the service_role key, which must NEVER be exposed in the frontend
+ * bundle — it lives here as a Vercel environment variable, server-side only.
+ * The auth schema itself stays hidden; access is mediated by two narrow
+ * objects created by supabase/schema.sql:
+ *
+ *   - public.owner_sessions            read-only view over auth.sessions
+ *   - public.revoke_owner_session()    deletes one session, scoped to the
+ *                                      caller's verified user id
+ *
  * Auth: the caller sends `Authorization: Bearer <access_token>`. The access
  * token is verified against GoTrue; only THAT user's sessions are ever
- * listed or revoked — never another user's.
+ * listed or revoked — never another user's (no IDOR: the user id is never
+ * client-chosen).
  *
  * Required env (Vercel → Settings → Environment Variables):
  *   SUPABASE_SERVICE_ROLE_KEY  (required — the service_role key from
@@ -29,6 +40,11 @@ interface SessionInfo {
   userAgent: string | null
   ip: string | null
 }
+
+/** One-time-setup hint shown when the schema objects are missing. */
+const SETUP_HINT =
+  'Run supabase/schema.sql in the Supabase SQL Editor (it creates the ' +
+  'owner_sessions view and revoke_owner_session function), then try again.'
 
 function json(res: ServerResponse, status: number, body: unknown) {
   res.statusCode = status
@@ -67,29 +83,108 @@ function readBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   })
 }
 
-async function adminJson(
+/** Best-effort error detail out of a PostgREST error payload. */
+function postgrestDetail(data: unknown): string {
+  if (!data || typeof data !== 'object') return ''
+  const d = data as Record<string, unknown>
+  return String(d.message ?? d.msg ?? d.error ?? d.hint ?? '')
+}
+
+/** Calls PostgREST (`/rest/v1`) with the service role key. */
+async function postgrest(
   url: string,
   serviceRole: string,
   path: string,
   init?: { method?: string; body?: string },
 ) {
-  const res = await fetch(`${url}/auth/v1${path}`, {
-    method: init?.method ?? 'GET',
-    headers: {
-      apikey: serviceRole,
-      Authorization: `Bearer ${serviceRole}`,
-      'Content-Type': 'application/json',
-    },
-    body: init?.body,
-  })
-  const text = await res.text()
-  let data: unknown = null
   try {
-    data = text ? JSON.parse(text) : null
+    const res = await fetch(`${url}/rest/v1${path}`, {
+      method: init?.method ?? 'GET',
+      headers: {
+        apikey: serviceRole,
+        Authorization: `Bearer ${serviceRole}`,
+        'Content-Type': 'application/json',
+      },
+      body: init?.body,
+    })
+    const text = await res.text()
+    let data: unknown = null
+    try {
+      data = text ? (JSON.parse(text) as unknown) : null
+    } catch {
+      data = null
+    }
+    return { status: res.status, data }
   } catch {
-    data = null
+    // Network failure — report a structured error instead of crashing into a
+    // Vercel HTML 500 page.
+    return { status: 502, data: { message: 'Could not reach Supabase.' } }
   }
-  return { status: res.status, data: data as Record<string, unknown> | null }
+}
+
+/**
+ * Reads the user's sessions. Prefers the owner_sessions view created by
+ * supabase/schema.sql; falls back to the raw auth.sessions table for projects
+ * that have exposed the auth schema to PostgREST.
+ */
+async function listSessions(
+  url: string,
+  serviceRole: string,
+  userId: string,
+): Promise<{ ok: true; sessions: SessionInfo[] } | { ok: false; error: string }> {
+  const query =
+    'select=id,created_at,updated_at,user_agent,ip' +
+    `&user_id=eq.${userId}` +
+    '&order=updated_at.desc'
+
+  let r = await postgrest(url, serviceRole, `/owner_sessions?${query}`)
+  // 404 = view not created yet; 403 = view exists but the grant is missing.
+  // Either way, try the raw auth.sessions table (for projects that exposed it).
+  if (r.status === 404 || r.status === 403) {
+    r = await postgrest(url, serviceRole, `/sessions?${query}`)
+  }
+
+  if (r.status !== 200 || !Array.isArray(r.data)) {
+    const detail = postgrestDetail(r.data)
+    if (r.status === 404 || r.status === 403) {
+      return { ok: false, error: `Session listing needs one-time setup. ${SETUP_HINT}` }
+    }
+    return {
+      ok: false,
+      error: detail ? `Failed to list sessions: ${detail}` : 'Failed to list sessions.',
+    }
+  }
+
+  const sessions: SessionInfo[] = (r.data as Array<Record<string, unknown>>).map((s) => ({
+    id: String(s.id ?? ''),
+    createdAt: String(s.created_at ?? ''),
+    updatedAt: String(s.updated_at ?? ''),
+    userAgent: (s.user_agent as string | null) ?? null,
+    ip: (s.ip as string | null) ?? null,
+  }))
+  return { ok: true, sessions }
+}
+
+/** Revokes one of the user's sessions via the revoke_owner_session function. */
+async function revokeSession(
+  url: string,
+  serviceRole: string,
+  userId: string,
+  sid: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const r = await postgrest(url, serviceRole, '/rpc/revoke_owner_session', {
+    method: 'POST',
+    body: JSON.stringify({ p_session_id: sid, p_user_id: userId }),
+  })
+  if (r.status === 200 || r.status === 204) return { ok: true }
+  const detail = postgrestDetail(r.data)
+  if (r.status === 404 || r.status === 403) {
+    return { ok: false, error: `Revoking sessions needs one-time setup. ${SETUP_HINT}` }
+  }
+  return {
+    ok: false,
+    error: detail ? `Failed to revoke session: ${detail}` : 'Failed to revoke session.',
+  }
 }
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
@@ -126,23 +221,12 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   }
 
   if (req.method === 'GET') {
-    const r = await adminJson(url, serviceRole, `/admin/users/${userId}/sessions`)
-    if (r.status !== 200 || !r.data) {
-      const detail = String(r.data?.message ?? r.data?.msg ?? r.data?.error ?? '')
-      json(res, 500, { error: detail ? `Failed to list sessions: ${detail}` : 'Failed to list sessions.' })
+    const result = await listSessions(url, serviceRole, userId)
+    if (!result.ok) {
+      json(res, 500, { error: result.error })
       return
     }
-    const raw = r.data.sessions
-    const sessions: SessionInfo[] = Array.isArray(raw)
-      ? (raw as Array<Record<string, unknown>>).map((s) => ({
-          id: String(s.id ?? ''),
-          createdAt: String(s.created_at ?? ''),
-          updatedAt: String(s.updated_at ?? ''),
-          userAgent: (s.user_agent as string | null) ?? null,
-          ip: (s.ip as string | null) ?? null,
-        }))
-      : []
-    json(res, 200, { sessions })
+    json(res, 200, { sessions: result.sessions })
     return
   }
 
@@ -159,14 +243,9 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       json(res, 400, { error: 'Missing session id.' })
       return
     }
-    const r = await adminJson(
-      url,
-      serviceRole,
-      `/admin/users/${userId}/sessions/${encodeURIComponent(sid)}`,
-      { method: 'DELETE' },
-    )
-    if (r.status !== 200 && r.status !== 204) {
-      json(res, 500, { error: 'Failed to revoke session.' })
+    const result = await revokeSession(url, serviceRole, userId, sid)
+    if (!result.ok) {
+      json(res, 500, { error: result.error })
       return
     }
     json(res, 200, { ok: true })

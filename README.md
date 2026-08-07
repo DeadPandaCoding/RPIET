@@ -52,7 +52,11 @@ your browser — no setup required. You can wipe or reload demo data anytime in 
    [`supabase/schema.sql`](supabase/schema.sql). This creates the `properties`, `units`,
    `tenants`, `incomes`, and `expenses` tables with **Row Level Security** scoped to each
    signed-in owner, plus a **private** `receipts` storage bucket used for expense receipt
-   uploads (served through signed URLs).
+   uploads (served through signed URLs). It also creates the `owner_sessions` view and
+   `revoke_owner_session` function that power the **Devices & Sessions** list in Settings
+   (GoTrue has no admin endpoint for this, so sessions are read from `auth.sessions`
+   through the API with the service-role key). **Already run this file before?** Re-run it
+   after pulling updates to pick up new objects.
 3. Copy `.env.example` to `.env` and fill in your keys:
 
    ```

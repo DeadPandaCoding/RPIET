@@ -256,3 +256,31 @@ create policy "Receipts: owner update" on storage.objects
 
 create policy "Receipts: owner delete" on storage.objects
   for delete using (bucket_id = 'receipts' and owner_id::text = auth.uid()::text);
+
+-- ---------------------------------------------------------------------------
+-- DEVICES & SESSIONS — auth.sessions access for the /api/sessions function
+-- GoTrue exposes no admin endpoint to list a user's sessions, so the Vercel
+-- serverless function reads them through PostgREST with the service_role key.
+-- The auth schema itself stays hidden; only these two narrow, owner-scoped
+-- objects are exposed in public:
+--
+--   • owner_sessions          read-only view over auth.sessions (safe columns)
+--   • revoke_owner_session()  deletes one session, scoped to the user id the
+--                             API verified server-side
+-- ---------------------------------------------------------------------------
+create or replace view public.owner_sessions as
+  select id, user_id, created_at, updated_at, user_agent, ip
+  from auth.sessions;
+
+grant select on public.owner_sessions to service_role;
+
+create or replace function public.revoke_owner_session(p_session_id uuid, p_user_id uuid)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  delete from auth.sessions where id = p_session_id and user_id = p_user_id;
+$$;
+
+grant execute on function public.revoke_owner_session(uuid, uuid) to service_role;

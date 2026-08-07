@@ -462,13 +462,14 @@ export function Settings() {
                   the <b>Email</b> provider under{' '}
                   <span className="font-mono text-xs">Authentication → Providers</span>.
                 </>,
-                <>
-                  Run{' '}
+                <>                  Run{' '}
                   <span className="rounded bg-indigo-900 px-1.5 py-0.5 font-mono text-[11px] text-emerald-300">
                     supabase/schema.sql
                   </span>{' '}
-                  in the Supabase SQL Editor. This creates all tables with per-user Row Level
-                  Security, the private receipts bucket, and the auth setup.
+                  in the Supabase SQL Editor. This creates all tables with per-user Row
+                  Level Security, the private receipts bucket, and the auth setup. It's
+                  safe to re-run after updates — the Devices & Sessions list needs the
+                  `owner_sessions` view and `revoke_owner_session` function it creates.
                 </>,
                 <>
                   Copy{' '}
