@@ -45,7 +45,12 @@ export async function signUpWithEmail(email: string, password: string) {
 
 export async function signOut() {
   const sb = requireClient()
-  await sb.auth.signOut()
+  // supabase-js defaults signOut() to the GLOBAL scope, which would sign the
+  // user out on EVERY device. Scope the main "Sign out" to THIS device only:
+  // it revokes this session's refresh tokens server-side and clears the local
+  // session, while every other device stays signed in. ("Sign out everywhere"
+  // uses the global scope explicitly; "Sign out other devices" uses 'others'.)
+  await sb.auth.signOut({ scope: 'local' })
 }
 
 /**

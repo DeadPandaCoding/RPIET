@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { User } from '@supabase/supabase-js'
+import type { RealtimeChannel, User } from '@supabase/supabase-js'
 import type {
   Dataset,
   Expense,
@@ -35,6 +35,7 @@ import {
 } from '../lib/api'
 import { loadTable } from '../lib/storage'
 import { getSupabase, setRemembered } from '../lib/supabase'
+import { sessionIdFromToken } from '../lib/sessions'
 import {
   onAuthStateChange,
   resetPasswordForEmail,
@@ -195,16 +196,60 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Session health check. Revoking a session (e.g. "Sign out other devices"
-  // or the Devices & Sessions Revoke button) only kills the refresh token —
-  // the already-issued access-token JWT stays valid for PostgREST until it
-  // expires (~1 hour), so a revoked device would otherwise look signed in and
-  // keep working until then. While the app is open or the tab becomes visible
-  // again, proactively refresh the token: if the session row is gone the
-  // refresh gets a 401 and supabase-js clears the local session and emits
-  // SIGNED_OUT (handled above), signing the user out here immediately.
-  // Offline/network failures do NOT sign the user out — supabase-js only
-  // clears the session on an auth 401, never on a fetch error.
+  // Real-time revocation. revoke_owner_session (supabase/schema.sql) records
+  // every revocation in public.session_revocations (owner-only RLS, published
+  // to Realtime), so subscribing to INSERTs for our own session id signs a
+  // revoked device out the moment the row lands — under a second, no polling.
+  // `{ scope: 'local' }` clears the local session (and emits SIGNED_OUT above)
+  // even when the server call fails, which it will, since the session is
+  // already dead server-side.
+  useEffect(() => {
+    const sb = getSupabase()
+    if (!sb || !user) return
+    let active = true
+    let channel: RealtimeChannel | null = null
+    void sb.auth.getSession().then(({ data }) => {
+      if (!active || !data.session) return
+      // Defensive: never pair a stale `user` state with a mismatched session.
+      if (data.session.user.id !== user.id) return
+      const sid = sessionIdFromToken(data.session.access_token)
+      if (!sid) return
+      channel = sb
+        .channel('session-revocations')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'session_revocations',
+            filter: `session_id=eq.${sid}`,
+          },
+          (payload) => {
+            // Defensive: never sign out based on another session's event.
+            const row = payload.new as { session_id?: string } | null
+            if (!row || row.session_id !== sid) return
+            void sb.auth.signOut({ scope: 'local' })
+          },
+        )
+        .subscribe()
+    })
+    return () => {
+      active = false
+      if (channel) void sb.removeChannel(channel)
+    }
+  }, [user])
+
+  // Session health check (FALLBACK to the realtime subscription above).
+  // Revoking a session kills its refresh token and session row server-side,
+  // but the already-issued access-token JWT stays valid for PostgREST until
+  // it expires (~1 hour) — and if Realtime is unavailable (blocked
+  // websockets, a subscription that never connected) the revoked device could
+  // keep working until then. Periodically refreshing the token is the safety
+  // net: once the refresh token is gone the refresh returns a 401 and
+  // supabase-js clears the local session and emits SIGNED_OUT (handled
+  // above), signing the user out. Offline/network failures do NOT sign the
+  // user out — supabase-js only clears the session on an auth 401, never on a
+  // fetch error.
   useEffect(() => {
     const sb = getSupabase()
     if (!sb || authLoading) return
@@ -223,7 +268,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
     void check()
     // Periodic re-check while the tab is visible, so a device that stays in
-    // the foreground (never refocused) still gets signed out within a minute.
+    // the foreground (never refocused) still gets signed out within a minute
+    // even if the realtime path is unavailable.
     const interval = window.setInterval(() => {
       if (document.visibilityState === 'visible') void check()
     }, 60_000)

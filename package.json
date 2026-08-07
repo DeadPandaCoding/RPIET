@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "smoke": "npx tsx test/smoke.ts",
+    "test:revocation": "npx tsx test/verify-revocation.ts",
     "preview": "vite preview",
     "scan:secrets": "node scripts/scan-secrets.mjs",
     "prepare": "node scripts/install-hooks.mjs"

@@ -16,8 +16,12 @@
  * objects created by supabase/schema.sql:
  *
  *   - public.owner_sessions            read-only view over auth.sessions
- *   - public.revoke_owner_session()    deletes one session, scoped to the
- *                                      caller's verified user id
+ *   - public.revoke_owner_session()    deletes one session (and its refresh
+ *                                      tokens), scoped to the caller's verified
+ *                                      user id; also records the revocation in
+ *                                      session_revocations for realtime sign-out
+ *   - public.session_revocations       realtime broadcast of revocations
+ *                                      (owner-only RLS)
  *
  * Auth: the caller sends `Authorization: Bearer <access_token>`. The access
  * token is verified against GoTrue; only THAT user's sessions are ever

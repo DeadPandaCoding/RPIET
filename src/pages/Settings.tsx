@@ -41,6 +41,7 @@ import {
   timeAgo,
   type SessionInfo,
 } from '../lib/sessions'
+import { getSecuritySettings, setRevokeSessionsOnPasswordChange } from '../lib/security'
 import type { Dataset } from '../lib/types'
 import { Badge, Button, Card, ConfirmDialog, Field, Input, Select } from '../components/ui'
 
@@ -102,6 +103,9 @@ export function Settings() {
   const [revoking, setRevoking] = useState<string | null>(null)
   const [confirmRevoke, setConfirmRevoke] = useState<SessionInfo | null>(null)
   const [signingOutOthers, setSigningOutOthers] = useState(false)
+  const [revokeOnPasswordChange, setRevokeOnPasswordChange] = useState(false)
+  const [revokeOnPasswordChangeLoading, setRevokeOnPasswordChangeLoading] = useState(true)
+  const [savingRevokeOnPasswordChange, setSavingRevokeOnPasswordChange] = useState(false)
   const [confirmOthers, setConfirmOthers] = useState(false)
   const [confirmEverywhere, setConfirmEverywhere] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -162,6 +166,40 @@ export function Settings() {
       window.removeEventListener('focus', scheduleReload)
       document.removeEventListener('visibilitychange', scheduleReload)
     }    }, [mode, loadSessions])
+
+  // Load the per-account security setting whenever Settings opens (Supabase mode).
+  useEffect(() => {
+    if (mode !== 'supabase') return
+    let active = true
+    void getSecuritySettings().then((s) => {
+      if (!active) return
+      setRevokeOnPasswordChange(s.revokeSessionsOnPasswordChange)
+      setRevokeOnPasswordChangeLoading(false)
+    })
+    return () => {
+      active = false
+    }
+  }, [mode])
+
+  const runSetRevokeOnPasswordChange = async (enabled: boolean) => {
+    setSavingRevokeOnPasswordChange(true)
+    // Optimistic; reverted if the save fails.
+    setRevokeOnPasswordChange(enabled)
+    try {
+      await setRevokeSessionsOnPasswordChange(enabled)
+      toast(
+        enabled
+          ? 'Other devices will be signed out after you change your password'
+          : 'Automatic sign-out of other devices disabled',
+        'success',
+      )
+    } catch (err) {
+      setRevokeOnPasswordChange(!enabled)
+      toast(err instanceof Error ? err.message : 'Could not save the setting', 'error')
+    } finally {
+      setSavingRevokeOnPasswordChange(false)
+    }
+  }
 
   // Keep the Appearance card in sync with theme changes from the header toggle.
   useEffect(() => {
@@ -455,6 +493,28 @@ export function Settings() {
               </Button>
             </div>
           </div>
+
+          <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 transition-colors hover:border-indigo-300 dark:border-slate-700/70 dark:bg-slate-900/40 dark:hover:border-indigo-500/40">
+            <input
+              type="checkbox"
+              checked={revokeOnPasswordChange}
+              disabled={revokeOnPasswordChangeLoading || savingRevokeOnPasswordChange}
+              onChange={(e) => void runSetRevokeOnPasswordChange(e.target.checked)}
+              className="mt-0.5 size-4 shrink-0 accent-indigo-600"
+              title="Sign out other devices when I change my password"
+            />
+            <span>
+              <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                Sign out other devices when I change my password
+                {savingRevokeOnPasswordChange && <Badge color="slate">Saving…</Badge>}
+              </span>
+              <span className="mt-0.5 block text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                After a password reset or change, every other device where you're signed in is
+                signed out immediately — even if its tab is open. This device stays signed in. The
+                setting follows your account on every device.
+              </span>
+            </span>
+          </label>
 
           <div className="mt-5">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-3">

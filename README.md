@@ -55,8 +55,10 @@ your browser — no setup required. You can wipe or reload demo data anytime in 
    uploads (served through signed URLs). It also creates the `owner_sessions` view and
    `revoke_owner_session` function that power the **Devices & Sessions** list in Settings
    (GoTrue has no admin endpoint for this, so sessions are read from `auth.sessions`
-   through the API with the service-role key). **Already run this file before?** Re-run it
-   after pulling updates to pick up new objects.
+   through the API with the service-role key). Revoking a device deletes its session
+   **and its refresh tokens** and broadcasts a Realtime event, so the revoked device
+   is signed out **instantly** — even with its tab open. An optional security setting (Settings → Devices & Sessions) signs out every other device automatically whenever you change your password — enforced by a database trigger, so it applies to every device. **Already run this file before?** Re-run it after pulling updates to pick
+   up new objects.
 3. Copy `.env.example` to `.env` and fill in your keys:
 
    ```
@@ -95,4 +97,5 @@ supabase/
 | `npm run lint`   | Run oxlint                    |
 | `npm run preview`| Preview the production build  |
 | `npm run smoke`  | Run the data/reporting smoke tests |
+| `npm run test:revocation` | Verify realtime cross-device sign-out on password change (needs Supabase + a test account) |
 | `npm run scan:secrets` | Scan for accidentally committed secrets |
