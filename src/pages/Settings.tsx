@@ -72,6 +72,7 @@ export function Settings() {
   const [sessionsLoading, setSessionsLoading] = useState(false)
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
   const [revoking, setRevoking] = useState<string | null>(null)
+  const [confirmRevoke, setConfirmRevoke] = useState<SessionInfo | null>(null)
   const [signingOutOthers, setSigningOutOthers] = useState(false)
   const [confirmEverywhere, setConfirmEverywhere] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -171,6 +172,8 @@ export function Settings() {
     { label: 'Income entries', value: dataset.incomes.length },
     { label: 'Expense entries', value: dataset.expenses.length },
   ]
+
+  const revokeTargetLabel = confirmRevoke ? deviceLabel(confirmRevoke.userAgent) : 'this device'
 
   const signOutBtn = async () => {
     try {
@@ -360,7 +363,7 @@ export function Settings() {
                           variant="secondary"
                           size="sm"
                           disabled={revoking === s.id}
-                          onClick={() => void runRevoke(s.id)}
+                          onClick={() => setConfirmRevoke(s)}
                         >
                           {revoking === s.id ? 'Revoking…' : 'Revoke'}
                         </Button>
@@ -655,6 +658,24 @@ export function Settings() {
           </>
         }
         confirmLabel="Sign out everywhere"
+      />
+
+      <ConfirmDialog
+        open={confirmRevoke !== null}
+        onClose={() => setConfirmRevoke(null)}
+        onConfirm={() => {
+          const target = confirmRevoke
+          setConfirmRevoke(null)
+          if (target) void runRevoke(target.id)
+        }}
+        title="Sign out this device?"
+        message={
+          <>
+            This will sign out <b>{revokeTargetLabel}</b> remotely. That device will need to sign
+            in again to access your portfolio. No data is deleted — it can sign back in anytime.
+          </>
+        }
+        confirmLabel="Sign out device"
       />
 
       <ConfirmDialog
