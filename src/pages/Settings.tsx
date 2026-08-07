@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react'
 import {
+  AlertTriangle,
   Cloud,
   Database,
   Download,
@@ -43,6 +44,31 @@ import {
 import type { Dataset } from '../lib/types'
 import { Badge, Button, Card, ConfirmDialog, Field, Input, Select } from '../components/ui'
 
+/** Sessions not refreshed in this long are considered inactive (hidden by default). */
+const INACTIVE_MS = 30 * 24 * 60 * 60 * 1000
+
+/**
+ * "Updated X ago" label next to ACTIVE SESSIONS. Ticks every 30s so the
+ * relative time stays accurate while the page stays open.
+ */
+function LastRefreshed({ at }: { at: Date | null }) {
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    // timeAgo has minute granularity, so a 60s tick keeps the label accurate
+    // with the fewest re-renders.
+    const id = window.setInterval(() => setTick((t) => t + 1), 60_000)
+    return () => window.clearInterval(id)
+  }, [])
+  if (!at) return null
+  const minutes = Math.max(0, Math.floor((Date.now() - at.getTime()) / 60_000))
+  // Beyond an hour, "2h ago" loses precision — show the clock time instead.
+  const label =
+    minutes < 60
+      ? timeAgo(at.toISOString())
+      : at.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+  return <span className="text-xs text-slate-400">Updated {label}</span>
+}
+
 export function Settings() {
   const {
     connection,
@@ -71,9 +97,12 @@ export function Settings() {
   const [sessionsError, setSessionsError] = useState<string | null>(null)
   const [sessionsLoading, setSessionsLoading] = useState(false)
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
+  const [showInactive, setShowInactive] = useState(false)
   const [revoking, setRevoking] = useState<string | null>(null)
   const [confirmRevoke, setConfirmRevoke] = useState<SessionInfo | null>(null)
   const [signingOutOthers, setSigningOutOthers] = useState(false)
+  const [confirmOthers, setConfirmOthers] = useState(false)
   const [confirmEverywhere, setConfirmEverywhere] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -98,6 +127,7 @@ export function Settings() {
       setSessions(result.ok ? result.sessions : [])
       setCurrentSessionId(result.currentSessionId)
       setSessionsError(result.ok ? null : result.error ?? 'Could not load sessions.')
+      if (result.ok) setLastRefreshed(new Date())
     } catch (err) {
       setSessions([])
       setSessionsError(err instanceof Error ? err.message : 'Could not load sessions.')
@@ -106,10 +136,32 @@ export function Settings() {
     }
   }, [])
 
-  // Load the session list whenever the Settings page opens (Supabase mode).
+  // Load the session list whenever the Settings page opens (Supabase mode),
+  // and refresh it whenever the tab regains focus or becomes visible again —
+  // so a session change made on another device shows up without a manual
+  // Refresh click.
   useEffect(() => {
-    if (mode === 'supabase') void loadSessions()
-  }, [mode, loadSessions])
+    if (mode !== 'supabase') return
+    let reloadScheduled: number | null = null
+    const scheduleReload = () => {
+      // Only reload when actually looking at the page: visibilitychange fires
+      // for both 'visible' and 'hidden', and focus implies the doc is visible.
+      if (document.visibilityState !== 'visible') return
+      // Collapse focus + visibilitychange firing in the same tick into one fetch.
+      if (reloadScheduled !== null) return
+      reloadScheduled = window.setTimeout(() => {
+        reloadScheduled = null
+        void loadSessions()
+      }, 0)
+    }
+    void loadSessions()
+    window.addEventListener('focus', scheduleReload)
+    document.addEventListener('visibilitychange', scheduleReload)
+    return () => {
+      if (reloadScheduled !== null) window.clearTimeout(reloadScheduled)
+      window.removeEventListener('focus', scheduleReload)
+      document.removeEventListener('visibilitychange', scheduleReload)
+    }    }, [mode, loadSessions])
 
   // Keep the Appearance card in sync with theme changes from the header toggle.
   useEffect(() => {
@@ -174,6 +226,98 @@ export function Settings() {
   ]
 
   const revokeTargetLabel = confirmRevoke ? deviceLabel(confirmRevoke.userAgent) : 'this device'
+
+  // Sessions not refreshed in INACTIVE_MS are treated as inactive (the app
+  // pings ~every 60s while a device is open, so a 30-day-stale row is truly
+  // unused). Hidden by default; toggle "Show inactive devices" to reveal them.
+  const sessionEntries = (sessions ?? []).map((s) => {
+    const seen = new Date(s.updatedAt).getTime()
+    const inactive = Number.isFinite(seen) && Date.now() - seen >= INACTIVE_MS
+    return { s, inactive }
+  })
+  const visibleEntries = sessionEntries.filter(({ inactive }) => showInactive || !inactive)
+  const hiddenInactiveCount = sessionEntries.filter(({ inactive }) => inactive).length
+
+  const sessionList =
+    visibleEntries.length > 0 ? (
+      <>
+        <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+          {visibleEntries.map(({ s, inactive }) => {
+            const isCurrent = s.id === currentSessionId
+            const mobile = /mobile|iphone|ipad|android/i.test(s.userAgent ?? '')
+            // Refreshed within the last 5 minutes = the device's app is open
+            // and in the foreground (it pings ~every 60s).
+            const activeNow = Date.now() - new Date(s.updatedAt).getTime() < 5 * 60_000
+            return (
+              <li
+                key={s.id}
+                className={`flex items-center gap-3 px-4 py-3 ${
+                  inactive ? 'bg-amber-50/70 dark:bg-amber-500/10' : ''
+                }`}
+              >
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/60 dark:text-indigo-300">
+                  {mobile ? <Smartphone className="size-4.5" /> : <Laptop className="size-4.5" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-700">
+                    <span className="truncate">{deviceLabel(s.userAgent)}</span>
+                    {isCurrent && <Badge color="emerald">This device</Badge>}
+                    {inactive && (
+                      <Badge color="amber">
+                        <AlertTriangle className="size-3" /> Possibly abandoned
+                      </Badge>
+                    )}
+                  </p>
+                  <p
+                    className={`text-xs ${
+                      inactive ? 'font-medium text-amber-600 dark:text-amber-400' : 'text-slate-400'
+                    }`}
+                  >
+                    {s.ip ? `${s.ip} · ` : ''}
+                    {activeNow ? (
+                      <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400">
+                        <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
+                        Active now
+                      </span>
+                    ) : (
+                      `Last seen ${timeAgo(s.updatedAt)}`
+                    )}
+                  </p>
+                </div>
+                {!isCurrent && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={revoking === s.id}
+                    onClick={() => setConfirmRevoke(s)}
+                  >
+                    {revoking === s.id ? 'Revoking…' : 'Revoke'}
+                  </Button>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+        {!showInactive && hiddenInactiveCount > 0 && (
+          <p className="mt-2 flex flex-wrap items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+            <AlertTriangle className="size-3.5 shrink-0" />
+            {hiddenInactiveCount} inactive device{hiddenInactiveCount === 1 ? '' : 's'} hidden (30+
+            days) — possibly abandoned ·{' '}
+            <button
+              className="font-semibold underline-offset-2 hover:underline"
+              onClick={() => setShowInactive(true)}
+            >
+              show inactive devices
+            </button>
+          </p>
+        )}
+      </>
+    ) : (
+      <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+        No devices active in the last 30 days — enable “Show inactive devices” to review possibly
+        abandoned ones.
+      </p>
+    )
 
   const signOutBtn = async () => {
     try {
@@ -301,7 +445,7 @@ export function Settings() {
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="secondary"
-                onClick={() => void runSignOutOthers()}
+                onClick={() => setConfirmOthers(true)}
                 disabled={signingOutOthers || sessionsLoading}
               >
                 <LogOut className="size-3.5" /> Sign out other devices
@@ -313,19 +457,34 @@ export function Settings() {
           </div>
 
           <div className="mt-5">
-            <div className="mb-2 flex items-center justify-between">
-              <h4 className="text-xs font-bold uppercase tracking-wide text-slate-400">
-                Active sessions
-              </h4>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => void loadSessions()}
-                disabled={sessionsLoading}
-              >
-                <RefreshCw className={`size-3.5 ${sessionsLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <h4 className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                  Active sessions
+                </h4>
+                <LastRefreshed at={lastRefreshed} />
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-slate-500">
+                  <input
+                    type="checkbox"
+                    checked={showInactive}
+                    onChange={(e) => setShowInactive(e.target.checked)}
+                    title="Devices not seen in 30+ days"
+                    className="size-3.5 accent-indigo-600"
+                  />
+                  Show inactive devices
+                </label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void loadSessions()}
+                  disabled={sessionsLoading}
+                >
+                  <RefreshCw className={`size-3.5 ${sessionsLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              </div>
             </div>
             {sessionsError && sessions && sessions.length > 0 && (
               <p className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
@@ -340,38 +499,7 @@ export function Settings() {
                 {sessionsError}
               </p>
             ) : sessions && sessions.length > 0 ? (
-              <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
-                {sessions.map((s) => {
-                  const isCurrent = s.id === currentSessionId
-                  const mobile = /mobile|iphone|ipad|android/i.test(s.userAgent ?? '')
-                  return (
-                    <li key={s.id} className="flex items-center gap-3 px-4 py-3">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/60 dark:text-indigo-300">
-                        {mobile ? <Smartphone className="size-4.5" /> : <Laptop className="size-4.5" />}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-700">
-                          <span className="truncate">{deviceLabel(s.userAgent)}</span>
-                          {isCurrent && <Badge color="emerald">This device</Badge>}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          {s.ip ? `${s.ip} · ` : ''}active {timeAgo(s.updatedAt)}
-                        </p>
-                      </div>
-                      {!isCurrent && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          disabled={revoking === s.id}
-                          onClick={() => setConfirmRevoke(s)}
-                        >
-                          {revoking === s.id ? 'Revoking…' : 'Revoke'}
-                        </Button>
-                      )}
-                    </li>
-                  )
-                })}
-              </ul>
+              sessionList
             ) : (
               <p className="py-6 text-center text-sm text-slate-400">
                 No active sessions found.
@@ -643,6 +771,21 @@ export function Settings() {
           </>
         }
         confirmLabel="Restore data"
+      />
+
+      <ConfirmDialog
+        open={confirmOthers}
+        onClose={() => setConfirmOthers(false)}
+        onConfirm={() => void runSignOutOthers()}
+        title="Sign out other devices?"
+        message={
+          <>
+            This will sign out every device where you're signed in other than this one — phones,
+            tablets, and other computers. <b>This device stays signed in.</b> The other devices
+            will need to sign in again to access your portfolio. No data is deleted.
+          </>
+        }
+        confirmLabel="Sign out other devices"
       />
 
       <ConfirmDialog
