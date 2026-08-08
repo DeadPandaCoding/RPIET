@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "_comment": "Security headers (CSP + clickjacking + nosniff). The CSP script-src hash MUST be regenerated whenever the inline theme script in index.html changes — run: node -e \"console.log('sha256-'+require('crypto').createHash('sha256').update(require('fs').readFileSync('index.html','utf8').match(/<script>([\\s\\S]*?)<\\/script>/)[1]).digest('base64'))\" and paste the new value here. The supabase.co host is pinned to this project (connect-src/img-src); if the Supabase project URL ever changes, update it here too.",
   "headers": [
     {
       "source": "/(.*)",
