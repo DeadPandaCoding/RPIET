@@ -26,10 +26,10 @@ browser-storage demo mode so you can start immediately without any setup.
 
 ### Motion & polish
 - **Entrance animations** — the auth landing (logo → tagline → card), the loading screen, and every in-app page reveal with staggered entrance animations (soft settle/rise/lift). The Dashboard reveals section-by-section (stat cards → charts → snapshot) and replays on navigation.
-- **Logo hover interaction** — the Valora mark (auth, loading, and sidebar) gently lifts with a soft champagne glow on hover; all motion respects `prefers-reduced-motion`.
+- **Logo hover interaction** — the Valora mark (auth, loading, and sidebar) gently lifts on hover; all motion respects `prefers-reduced-motion`.
 - **Compact auth landing** — the logo is the hero (up to 144px tall) while the page fits one screen without scrolling at phone, tablet, and laptop sizes.
 
-### Accessibility & robustness
+### Accessibility & reliability
 - **Form-field a11y** — all shared inputs/selects/textareas auto-assign stable ids, eliminating the browser's "form field should have an id or name" warning.
 - **Dark-mode contrast audit** — every page reviewed in dark mode in the browser; no remaining low-contrast text or clashing pastel boxes.
 
