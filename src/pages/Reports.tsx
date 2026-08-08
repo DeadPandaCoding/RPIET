@@ -62,7 +62,7 @@ export function Reports() {
   const exportPropsPDF = () => {
     exportPDF({
       title: 'Property Performance Report',
-      subtitle: `Portfolio comparison · ${periodLabel}`,
+      subtitle: `By property · ${periodLabel}`,
       summary: [
         { label: 'Total Income', value: formatCurrency(totals.income) },
         { label: 'Total Expenses', value: formatCurrency(totals.expense) },
@@ -163,9 +163,9 @@ export function Reports() {
           <p className="text-[11px] font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-300">Expenses</p>
           <p className="font-display mt-1 text-xl font-semibold text-rose-700 dark:text-rose-300">−{formatCurrency(totals.expense)}</p>
         </div>
-        <div className={`rounded-2xl border p-4 ${totals.net >= 0 ? 'border-violet-200 bg-violet-50 dark:border-violet-500/25 dark:bg-violet-500/10' : 'border-rose-200 bg-rose-50 dark:border-rose-500/25 dark:bg-rose-500/10'}`}>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300">Net (NOI)</p>
-          <p className={`font-display mt-1 text-xl font-semibold ${totals.net >= 0 ? 'text-violet-700 dark:text-violet-300' : 'text-rose-700 dark:text-rose-300'}`}>{totals.net >= 0 ? '+' : '−'}{formatCurrency(Math.abs(totals.net))}</p>
+        <div className={`rounded-2xl border p-4 ${totals.net >= 0 ? 'border-indigo-200 bg-indigo-50 dark:border-indigo-500/25 dark:bg-indigo-500/10' : 'border-rose-200 bg-rose-50 dark:border-rose-500/25 dark:bg-rose-500/10'}`}>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">Net (NOI)</p>
+          <p className={`font-display mt-1 text-xl font-semibold ${totals.net >= 0 ? 'text-indigo-700 dark:text-indigo-300' : 'text-rose-700 dark:text-rose-300'}`}>{totals.net >= 0 ? '+' : '−'}{formatCurrency(Math.abs(totals.net))}</p>
         </div>
       </div>
 
@@ -193,10 +193,10 @@ export function Reports() {
       {tab === 'properties' && (
         <div className="space-y-4">
           {perfRows.length === 0 ? (
-            <EmptyState title="No properties to compare" description="Add properties to see performance comparisons." />
+            <EmptyState title="No properties to compare" description="Add your properties and their numbers will show up here." />
           ) : (
             <>
-              <Card title="Net Income by Property" subtitle="Income, expenses, and net across the portfolio">
+              <Card title="Net Income by Property" subtitle="Income, expenses, and net for each property">
                 <PropertyNetChart rows={perfRows} />
               </Card>
 
@@ -250,9 +250,9 @@ export function Reports() {
       {tab === 'tenants' && (
         <div className="space-y-4">
           {tenantRows.length === 0 ? (
-            <EmptyState title="No tenants to report" description="Add tenants and record income to see payment history." />
+            <EmptyState title="No tenants to report" description="Add tenants and log their rent payments to see history here." />
           ) : (
-            <Card padded={false} title={`Tenant Payment History · ${periodLabel}`} subtitle="Expected rent is calculated from leases within the selected period">
+            <Card padded={false} title={`Tenant Payment History · ${periodLabel}`} subtitle="Expected rent comes from the leases that fall in this period">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>

@@ -129,7 +129,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (p: PageKey) => void }) 
 
       <div className="animate-fade-in-up flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold text-slate-500">Portfolio summary</p>
+          <p className="text-xs font-semibold text-slate-500">Your numbers</p>
           <h2 className="font-display text-xl font-semibold tracking-tight text-slate-900">{rangeLabel(range)}</h2>
         </div>
         <DateRangeFilter range={range} onChange={setRange} />
@@ -154,7 +154,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (p: PageKey) => void }) 
           label="Net Operating Income"
           value={`${totals.net >= 0 ? '+' : '−'}${formatCurrency(Math.abs(totals.net))}`}
           icon={<Scale className="size-5" />}
-          accent={totals.net >= 0 ? 'violet' : 'rose'}
+          accent={totals.net >= 0 ? 'indigo' : 'rose'}
           hint={
             <span className={cashMargin >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
               {cashMargin >= 0 ? '+' : ''}
@@ -163,18 +163,18 @@ export function Dashboard({ onNavigate }: { onNavigate: (p: PageKey) => void }) 
           }
         />
         <StatCard
-          label="Portfolio Occupancy"
+          label="Occupancy"
           value={`${occupancy}%`}
           icon={<Users className="size-5" />}
-          accent="sky"
-          hint={`${occupiedUnits} of ${totalUnits} units leased · ${formatCurrency(monthlyRentPotential)}/mo potential`}
+          accent="indigo"
+          hint={`${occupiedUnits} of ${totalUnits} units leased · ${formatCurrency(monthlyRentPotential)}/mo in rent`}
         />
       </div>
 
       <div className="animate-fade-in-up grid grid-cols-1 gap-4 xl:grid-cols-3 [animation-delay:0.2s]">
         <Card
           title="Monthly Income vs. Expenses"
-          subtitle="Shaded areas show cash in and out; the line tracks net"
+          subtitle="The bars show money in and out; the line shows what's left"
           className="xl:col-span-2"
         >
           {series.length === 0 ? (
@@ -239,7 +239,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (p: PageKey) => void }) 
           </div>
           <div className="mt-3 flex gap-2">
             <Badge color="indigo">{formatNumber(dataset.properties.length)} properties</Badge>
-            <Badge color="sky">{formatNumber(dataset.tenants.length)} tenants</Badge>
+            <Badge color="indigo">{formatNumber(dataset.tenants.length)} tenants</Badge>
           </div>
         </Card>
 

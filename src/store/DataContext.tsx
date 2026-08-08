@@ -260,7 +260,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       // Only treat this as a session change when the user actually changed.
       // Supabase fires SIGNED_IN again when the tab regains focus (to re-sync
       // the session); showing the loading screen there without a matching
-      // reload would leave the app stuck on "Loading your portfolio…" forever.
+      // reload would leave the app stuck on "Loading your data…" forever.
       const prev = userRef.current
       if (prev?.id !== next?.id || prev?.email !== next?.email) {
         userRef.current = next

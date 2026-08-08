@@ -90,7 +90,7 @@ function TenantFormModal({
       open={open}
       onClose={onClose}
       title={editing ? 'Edit Tenant' : 'Add Tenant'}
-      description="Assign a tenant to a unit and record lease details."
+      description="Put a tenant in a unit and note the lease details."
       size="lg"
       footer={
         <>
@@ -125,7 +125,7 @@ function TenantFormModal({
           <UnitSelect propertyId={propertyId} value={unitId} onChange={setUnitId} />
         </Field>
         <Field label="Notes" className="sm:col-span-2">
-          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Pet agreements, parking, special terms…" />
+          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Pet agreements, parking spot, special terms…" />
         </Field>
       </div>
     </Modal>
@@ -195,7 +195,7 @@ export function Tenants() {
           title={dataset.tenants.length === 0 ? 'No tenants yet' : 'No matching tenants'}
           description={
             dataset.tenants.length === 0
-              ? 'Add tenants and assign them to units to track leases and payment history.'
+              ? 'Add your tenants and put them in units to track leases and payments.'
               : 'Try a different search term.'
           }
           action={
@@ -215,7 +215,7 @@ export function Tenants() {
           return (
             <Card key={t.id} padded={false} className="flex flex-col">
               <div className="flex items-start gap-3 p-5 pb-3">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-sm font-extrabold text-white shadow-sm">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-sm font-extrabold text-white shadow-sm">
                   {t.name
                     .split(' ')
                     .map((p) => p[0])
@@ -295,8 +295,8 @@ export function Tenants() {
         title="Delete tenant?"
         message={
           <>
-            Remove <b>{deleting?.name}</b>? Their unit will be freed and past income entries will be
-            kept without a tenant link.
+            Remove <b>{deleting?.name}</b>? Their unit frees up, and past rent entries stay in your
+            records without the tenant attached.
           </>
         }
       />

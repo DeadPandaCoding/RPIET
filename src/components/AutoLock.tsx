@@ -98,7 +98,7 @@ export function AutoLock() {
   if (!enabled || !warning) return null
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/70 p-4">
       <div className="animate-modal-pop w-full max-w-sm rounded-2xl bg-surface p-6 text-center shadow-2xl dark:ring-1 dark:ring-white/10">
         <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400">
           <ShieldAlert className="size-7" />

@@ -7,7 +7,7 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
     Roboto, "Helvetica Neue", Arial, sans-serif;
-  /* Premium display serif — wordmarks, headline numerals, page titles */
+  /* Display serif — wordmarks, headline numerals, page titles */
   --font-display: "Fraunces", ui-serif, Georgia, "Times New Roman", serif;
 
   /* Valora — ink navy primary, champagne gold accent, warm ivory canvas. */
@@ -18,30 +18,26 @@
      with this single override. */
   --color-surface: #ffffff;
 
-  /* Brand navy (replaces the indigo scale app-wide) */
-  --color-indigo-50: #f2f4f8;
-  --color-indigo-100: #e4e8ef;
-  --color-indigo-200: #c9d1de;
-  --color-indigo-300: #9facc2;
-  --color-indigo-400: #6e7f9e;
-  --color-indigo-500: #46587b;
+  /* Flat ink navy — the single app-wide accent. "indigo" utilities (e.g.
+     bg-indigo-600 / text-indigo-600 / ring-indigo-100) all render this
+     one navy, so the whole UI shares one accent color. */
+  --color-indigo-50: #eef1f5;
+  --color-indigo-100: #dde3ec;
+  --color-indigo-200: #c3cddb;
+  --color-indigo-300: #9aa9c0;
+  --color-indigo-400: #65789a;
+  --color-indigo-500: #435678;
   --color-indigo-600: #1a2536;
-  --color-indigo-700: #131d2c;
+  --color-indigo-700: #141d2c;
   --color-indigo-800: #0e1622;
   --color-indigo-900: #0a111a;
 
-  /* Champagne gold (replaces the violet scale app-wide — so "violet"
-     utilities such as bg-violet-50 / text-violet-600 now render gold) */
-  --color-violet-50: #f7f3ea;
-  --color-violet-100: #efe6d4;
-  --color-violet-200: #e0cfab;
-  --color-violet-300: #cdb27e;
-  --color-violet-400: #bc9b5e;
-  --color-violet-500: #a88443;
-  --color-violet-600: #8c6b31;
-  --color-violet-700: #6e5323;
-  --color-violet-800: #523d1b;
-  --color-violet-900: #3a2a12;
+  /* Flat champagne gold: "violet" utilities render gold ONLY on the flat
+     navy sidebar (active nav icon, indicator dot, avatar) — the single
+     contrast accent on navy. Purple is never used in the app. */
+  --color-violet-300: #d8c9a8;
+  --color-violet-400: #c9b684;
+  --color-violet-500: #b39a5f;
 }
 
 /* Recharts grid / axis colors (flipped under .dark below) */
@@ -91,10 +87,10 @@
   --tw-ring-offset-color: var(--color-canvas);
 }
 
-/* Gold-on-navy selection in dark mode */
+/* Navy-on-navy selection in dark mode */
 .dark ::selection {
-  background: var(--color-violet-500);
-  color: #0a111a;
+  background: var(--color-indigo-500);
+  color: #f7f9fc;
 }
 
 /* Dark scrollbars */
@@ -116,7 +112,7 @@ body {
   @apply bg-canvas text-slate-800;
 }
 
-/* Luxury ink selection highlight */
+/* Ink selection highlight */
 ::selection {
   background: var(--color-indigo-600);
   color: #faf9f5;
@@ -183,7 +179,7 @@ input[type="number"] {
   animation: modal-pop 0.18s ease-out both;
 }
 
-/* Luxury landing entrance — a slow, composed reveal for the auth screens.
+/* Landing entrance — a slow, composed reveal for the auth screens.
    The logo settles first, the tagline follows, then the card lifts in. */
 @keyframes entrance-rise {
   0% {

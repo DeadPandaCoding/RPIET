@@ -1,6 +1,6 @@
-# Valora — Private Portfolio
+# Valora — Rental Property Tracker
 
-A private portfolio platform for managing rental properties, units, and tenants —
+A simple tracker for managing your rental properties, units, and tenants —
 with income/expense tracking, dashboards, financial reports, and CSV/PDF exports.
 
 Built with **React 19 + TypeScript + Vite**, styled with **Tailwind CSS v4**, charts with
@@ -21,11 +21,11 @@ browser-storage demo mode so you can start immediately without any setup.
 ## What's new (recently shipped)
 
 ### Brand & design
-- **Valora rebrand** — private-bank aesthetic: ink-navy primary, champagne-gold accent, warm ivory canvas. Premium display serif (**Fraunces**) for headline figures/wordmark accents alongside **Inter** for UI text.
+- **Valora look** — flat ink-navy primary with a champagne-gold accent on the navy sidebar, on a warm ivory canvas. Display serif (**Fraunces**) for headline figures/wordmark accents alongside **Inter** for UI text.
 - **Dark mode** — the Valora navy is the primary dark surface; every card, input, and modal flips via a single `bg-surface` token. Includes a full dark-mode contrast pass (brightened semantic figures, navy-tinted chips/badges, dark-aware toasts and hover states).
 
 ### Motion & polish
-- **Luxury entrance choreography** — the auth landing (logo → tagline → card), the loading screen, and every in-app page reveal with staggered, composed entrance animations (soft settle/rise/lift, gentle easing). The Dashboard staggers section-by-section (stat cards → charts → snapshot) and replays on navigation.
+- **Entrance animations** — the auth landing (logo → tagline → card), the loading screen, and every in-app page reveal with staggered entrance animations (soft settle/rise/lift). The Dashboard reveals section-by-section (stat cards → charts → snapshot) and replays on navigation.
 - **Logo hover interaction** — the Valora mark (auth, loading, and sidebar) gently lifts with a soft champagne glow on hover; all motion respects `prefers-reduced-motion`.
 - **Compact auth landing** — the logo is the hero (up to 144px tall) while the page fits one screen without scrolling at phone, tablet, and laptop sizes.
 

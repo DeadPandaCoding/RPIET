@@ -154,7 +154,7 @@ export function DateRangeFilter({
           aria-label="Start date"
           value={range.customStart ?? ''}
           onChange={(e) => e.target.value && setCustom('customStart', e.target.value)}
-          className="rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/25 dark:focus:border-violet-400 dark:focus:ring-violet-500/25"
+          className="rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/25 dark:focus:border-indigo-400 dark:focus:ring-indigo-500/25"
         />
         <span className="text-xs text-slate-400">to</span>
         <input
@@ -163,7 +163,7 @@ export function DateRangeFilter({
           aria-label="End date"
           value={range.customEnd ?? ''}
           onChange={(e) => e.target.value && setCustom('customEnd', e.target.value)}
-          className="rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/25 dark:focus:border-violet-400 dark:focus:ring-violet-500/25"
+          className="rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm text-slate-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/25 dark:focus:border-indigo-400 dark:focus:ring-indigo-500/25"
         />
       </div>
     ) : null
@@ -181,7 +181,7 @@ export function DateRangeFilter({
             onClick={() => setPreset(p.key)}
             className={`px-3 py-2 text-xs font-semibold transition-colors ${
               range.preset === p.key
-                ? 'bg-indigo-600 text-white dark:bg-violet-500 dark:text-indigo-950'
+                ? 'bg-indigo-600 text-white dark:bg-indigo-600 dark:text-white'
                 : 'bg-surface text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-200'
             }`}
           >

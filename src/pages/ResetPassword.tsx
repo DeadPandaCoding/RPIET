@@ -49,9 +49,6 @@ export function ResetPassword() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-canvas px-4 py-2">
-      <div className="pointer-events-none absolute -left-32 -top-32 size-96 rounded-full bg-indigo-300/20 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-40 -right-24 size-[28rem] rounded-full bg-violet-300/20 blur-3xl" />
-
       <div className="relative w-full max-w-md">
         <h1 className="sr-only">Valora</h1>
         <div className="mb-2 flex flex-col items-center text-center">
@@ -60,12 +57,12 @@ export function ResetPassword() {
           <span className="animate-entrance-settle inline-block">
             {/* Hover lift lives on its own span so it never clashes with the
                 entrance animation's held end-state transform */}
-            <span className="inline-block transition-transform duration-300 ease-out hover:-translate-y-1 hover:drop-shadow-[0_8px_24px_rgba(140,107,49,0.35)] motion-reduce:transition-none motion-reduce:hover:transform-none">
+            <span className="inline-block transition-transform duration-300 ease-out hover:-translate-y-1 hover:drop-shadow-[0_8px_24px_rgba(26,37,54,0.18)] motion-reduce:transition-none motion-reduce:hover:transform-none">
               <img src="/valora-logo.png" alt="" className="h-32 w-auto sm:h-36 dark:hidden" />
               <img src="/valora-logo-dark.png" alt="" className="hidden h-32 w-auto sm:h-36 dark:block" />
             </span>
           </span>
-          <p className="animate-entrance-rise mt-1.5 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-400 [animation-delay:0.15s]">Private Portfolio</p>
+          <p className="animate-entrance-rise mt-1.5 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-400 [animation-delay:0.15s]">Rental Property Tracker</p>
           <p className="animate-entrance-rise mt-0.5 text-sm text-slate-500 [animation-delay:0.25s]">Choose a new password for your account</p>
         </div>
 

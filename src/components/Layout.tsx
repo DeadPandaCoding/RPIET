@@ -26,12 +26,12 @@ export type PageKey =
   | 'settings'
 
 export const PAGE_META: Record<PageKey, { label: string; title: string; subtitle: string; icon: ReactNode }> = {
-  dashboard: { label: 'Dashboard', title: 'Dashboard', subtitle: 'Overview of your portfolio performance', icon: <LayoutDashboard className="size-5" /> },
-  properties: { label: 'Properties', title: 'Properties & Units', subtitle: 'Manage buildings, units, and rent amounts', icon: <Building2 className="size-5" /> },
-  tenants: { label: 'Tenants', title: 'Tenants', subtitle: 'Leases, contacts, and rent due dates', icon: <Users className="size-5" /> },
-  incomes: { label: 'Income', title: 'Income Tracker', subtitle: 'Record rent and other money received', icon: <ArrowDownCircle className="size-5" /> },
-  expenses: { label: 'Expenses', title: 'Expense Tracker', subtitle: 'Record costs and upload receipts', icon: <ArrowUpCircle className="size-5" /> },
-  reports: { label: 'Reports', title: 'Reports & Analytics', subtitle: 'Performance, tenant payments, and tax exports', icon: <BarChart3 className="size-5" /> },
+  dashboard: { label: 'Dashboard', title: 'Dashboard', subtitle: 'Your numbers at a glance', icon: <LayoutDashboard className="size-5" /> },
+  properties: { label: 'Properties', title: 'Properties & Units', subtitle: 'Your buildings, units, and rent amounts', icon: <Building2 className="size-5" /> },
+  tenants: { label: 'Tenants', title: 'Tenants', subtitle: 'Who rents from you, and when rent is due', icon: <Users className="size-5" /> },
+  incomes: { label: 'Income', title: 'Income Tracker', subtitle: 'Rent and other money you received', icon: <ArrowDownCircle className="size-5" /> },
+  expenses: { label: 'Expenses', title: 'Expense Tracker', subtitle: 'What you paid, with receipts', icon: <ArrowUpCircle className="size-5" /> },
+  reports: { label: 'Reports', title: 'Reports & Analytics', subtitle: 'Comparisons, tenant payments, and exports', icon: <BarChart3 className="size-5" /> },
   settings: { label: 'Settings', title: 'Settings & Connection', subtitle: 'Data source, demo data, and schema setup', icon: <Settings className="size-5" /> },
 }
 
@@ -40,18 +40,18 @@ const NAV_ORDER: PageKey[] = ['dashboard', 'properties', 'tenants', 'incomes', '
 function Logo() {
   return (
     <div className="px-2">
-      {/* The sidebar is always navy, so the ivory logo variant is used in
+      {/* The sidebar is always flat navy, so the ivory logo variant is used in
           both themes — no white plate needed. */}
       <div className="flex items-center justify-center px-3 py-3">
-        {/* Gentle lift + soft ivory-gold glow on the navy sidebar */}
+        {/* Gentle lift + soft navy glow on the flat navy sidebar */}
         <img
           src="/valora-logo-dark.png"
           alt="Valora"
-          className="h-14 w-auto transition-transform duration-300 ease-out hover:-translate-y-0.5 hover:drop-shadow-[0_6px_18px_rgba(252,231,191,0.25)] motion-reduce:transition-none motion-reduce:hover:transform-none"
+          className="h-14 w-auto transition-transform duration-300 ease-out hover:-translate-y-0.5 hover:drop-shadow-[0_6px_18px_rgba(26,37,54,0.45)] motion-reduce:transition-none motion-reduce:hover:transform-none"
         />
       </div>
-      <div className="mt-2 text-center text-[10px] font-medium uppercase tracking-[0.3em] text-slate-400">
-        Private Portfolio
+      <div className="mt-2 text-center text-[10px] font-medium uppercase tracking-[0.3em] text-slate-500">
+        Rental Property Tracker
       </div>
     </div>
   )
@@ -124,7 +124,7 @@ function UserChip() {
   return (
     <div className="px-3">
       <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
-        <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-[10px] font-extrabold text-white">
+        <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-violet-500 text-[10px] font-extrabold text-indigo-950">
           {email[0]?.toUpperCase() ?? '?'}
         </div>
         <div className="min-w-0 flex-1">
@@ -198,7 +198,7 @@ export function Layout({
 
   return (
     <div className="min-h-screen">
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar — flat navy, no gradient */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-white/5 bg-indigo-800 lg:block dark:bg-indigo-900">
         {sidebar}
       </aside>
@@ -207,7 +207,7 @@ export function Layout({
       {mobileOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60"
             onClick={() => setMobileOpen(false)}
           />
           <aside className="absolute inset-y-0 left-0 w-64 border-r border-white/5 bg-indigo-800 shadow-2xl dark:bg-indigo-900">
@@ -223,11 +223,11 @@ export function Layout({
         </div>
       )}
 
-      {/* Main content — keyed by page so the luxury entrance replays on
+      {/* Main content — keyed by page so the entrance animation replays on
           every navigation. The header stays outside the animated wrapper so
           its sticky positioning is never broken by a parent transform. */}
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-surface/85 backdrop-blur">
+        <header className="sticky top-0 z-20 border-b border-slate-200 bg-surface">
           <div className="flex items-center gap-3 px-4 py-3.5 sm:px-6 lg:px-8">
             <button
               onClick={() => setMobileOpen(true)}

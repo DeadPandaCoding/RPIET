@@ -90,7 +90,7 @@ function IncomeFormModal({
       open={open}
       onClose={onClose}
       title={editing ? 'Edit Income' : 'Record Income'}
-      description="Rent, deposits, fees, or reimbursements received."
+      description="Rent, deposits, fees, or reimbursements you received."
       size="lg"
       footer={
         <>
@@ -131,7 +131,7 @@ function IncomeFormModal({
         </Field>
         <div className="sm:col-span-2" />
         <Field label="Notes" className="sm:col-span-2">
-          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Receipt #, reference, payment details…" />
+          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Receipt #, reference, anything worth remembering" />
         </Field>
       </div>
       {tenantOptions.length === 0 && unitId && (
@@ -235,7 +235,7 @@ export function Incomes() {
             <EmptyState
               icon={<ArrowDownCircle className="size-12" />}
               title="No income in this period"
-              description="Record your first income entry, or widen the date range or filters."
+              description="Log your first payment, or widen the date range or filters."
               action={
                 <Button variant="success" onClick={() => setModal({ open: true, editing: null })}>
                   <Plus className="size-4" /> Record Income
@@ -293,7 +293,7 @@ export function Incomes() {
           </div>
         )}
         <div className="border-t border-slate-100 px-4 py-2.5 text-xs text-slate-400">
-          {formatNumber(filtered.length)} {filtered.length === 1 ? 'entry' : 'entries'} · Export for taxes anytime via the CSV button.
+          {formatNumber(filtered.length)} {filtered.length === 1 ? 'entry' : 'entries'} · Use the CSV button to export for taxes anytime.
         </div>
       </Card>
 

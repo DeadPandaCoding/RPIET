@@ -420,7 +420,7 @@ export function Settings() {
       {supabase && (
         <Card
           title="Account & Security"
-          subtitle="Signed in as the data owner — only you can read or modify your records"
+          subtitle="You're the owner of this data — only you can see or change it"
           actions={
             <Button variant="secondary" size="sm" onClick={() => void signOutBtn()}>
               <LogOut className="size-3.5" /> Sign out
@@ -428,13 +428,13 @@ export function Settings() {
           }
         >
           <div className="flex flex-wrap items-center gap-4">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm dark:from-indigo-400 dark:to-violet-500 dark:text-indigo-950">
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-sm dark:bg-indigo-500 dark:text-white">
               <UserRound className="size-6" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-base font-bold text-slate-800">{user?.email ?? 'Signed in'}</p>
               <p className="text-xs text-slate-500">
-                Authenticated with Supabase Auth · user id{' '}
+                Signed in with Supabase Auth · user id{' '}
                 <span className="font-mono text-[11px]">{user?.id ?? '—'}</span>
               </p>
             </div>
@@ -509,9 +509,9 @@ export function Settings() {
                 {savingRevokeOnPasswordChange && <Badge color="slate">Saving…</Badge>}
               </span>
               <span className="mt-0.5 block text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                After a password reset or change, every other device where you're signed in is
-                signed out immediately — even if its tab is open. This device stays signed in. The
-                setting follows your account on every device.
+                When you reset or change your password, every other device gets signed out right
+                away — even if its tab is open. This device stays signed in. The setting follows
+                your account on every device.
               </span>
             </span>
           </label>
@@ -572,7 +572,7 @@ export function Settings() {
       {/* Appearance */}
       <Card
         title="Appearance"
-        subtitle="Choose how Valora looks on this device — System follows your device setting"
+        subtitle="Pick how the app looks on this device — System follows your device settings"
       >
         <div className="flex gap-1 rounded-xl bg-slate-100 p-1 sm:w-fit">
           {THEME_OPTIONS.map((o) => (
@@ -644,7 +644,7 @@ export function Settings() {
                     href="https://supabase.com"
                     target="_blank"
                     rel="noreferrer"
-                    className="font-semibold text-indigo-600 hover:underline dark:text-violet-400 dark:hover:text-violet-300"
+                    className="font-semibold text-indigo-600 hover:underline dark:text-indigo-400 dark:hover:text-indigo-300"
                   >
                     supabase.com
                   </a>{' '}
@@ -653,7 +653,8 @@ export function Settings() {
                   the <b>Email</b> provider under{' '}
                   <span className="font-mono text-xs">Authentication → Providers</span>.
                 </>,
-                <>                  Run{' '}
+                <>
+                  Run{' '}
                   <span className="rounded bg-indigo-900 px-1.5 py-0.5 font-mono text-[11px] text-emerald-300">
                     supabase/schema.sql
                   </span>{' '}
@@ -705,7 +706,7 @@ export function Settings() {
       {/* Schema */}
       <Card
         title="Database Schema"
-        subtitle="Tables, indexes, and Row Level Security policies"
+        subtitle="Tables, indexes, and row-level security policies"
       >
         <div className="flex items-start gap-3">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-900/60 dark:text-indigo-300">
@@ -734,7 +735,7 @@ export function Settings() {
       {/* Demo data */}
       <Card
         title="Demo Data"
-        subtitle="Load sample data to explore the app, or wipe everything"
+        subtitle="Load sample data to try the app, or wipe everything"
       >
         <div className="flex flex-wrap items-center gap-3">
           <Button variant="success" onClick={() => void runSeed()} disabled={seeding}>
@@ -754,7 +755,7 @@ export function Settings() {
       {/* Backup & restore */}
       <Card
         title="Backup & Restore"
-        subtitle="Download an encrypted copy of all your data, or restore from one"
+        subtitle="Save an encrypted copy of all your data, or restore from one"
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -824,10 +825,10 @@ export function Settings() {
         title="Restore this backup?"
         message={
           <>
-            This will <b>replace all current data</b>{' '}
-            {supabase ? 'in your Supabase project' : 'stored in this browser'} with the contents
-            of the backup file. This cannot be undone. Consider downloading a fresh backup
-            first so you can recover if anything goes wrong.
+            This <b>replaces all current data</b>{' '}
+            {supabase ? 'in your Supabase project' : 'stored in this browser'} with what's in the
+            backup file. There's no undo. It's a good idea to download a fresh backup first, just
+            in case.
           </>
         }
         confirmLabel="Restore data"
@@ -840,9 +841,9 @@ export function Settings() {
         title="Sign out other devices?"
         message={
           <>
-            This will sign out every device where you're signed in other than this one — phones,
-            tablets, and other computers. <b>This device stays signed in.</b> The other devices
-            will need to sign in again to access your portfolio. No data is deleted.
+            This signs out every device where you're logged in other than this one — phones,
+            tablets, other computers. <b>This device stays signed in.</b> The others will just
+            need to sign in again. Nothing gets deleted.
           </>
         }
         confirmLabel="Sign out other devices"
@@ -855,9 +856,9 @@ export function Settings() {
         title="Sign out everywhere?"
         message={
           <>
-            This revokes your session on <b>every device</b>, including this one. You'll need
-            to sign in again on each device. Any unsaved work on other devices is not affected
-            (data is already saved), but you'll be signed out here immediately.
+            This signs out <b>every device</b>, including this one. You'll need to sign in again
+            on each device. Your data is already saved, so nothing is lost — you'll just be
+            signed out here right away.
           </>
         }
         confirmLabel="Sign out everywhere"
@@ -874,8 +875,8 @@ export function Settings() {
         title="Sign out this device?"
         message={
           <>
-            This will sign out <b>{revokeTargetLabel}</b> remotely. That device will need to sign
-            in again to access your portfolio. No data is deleted — it can sign back in anytime.
+            This signs out <b>{revokeTargetLabel}</b> on that device. It will need to sign in
+            again to get back in. Nothing gets deleted.
           </>
         }
         confirmLabel="Sign out device"
@@ -896,8 +897,8 @@ export function Settings() {
         message={
           <>
             This permanently deletes <b>all</b> properties, units, tenants, income, and expense
-            entries {supabase ? 'in your Supabase project' : 'stored in this browser'}. This
-            cannot be undone.
+            entries {supabase ? 'in your Supabase project' : 'stored in this browser'}. There's
+            no undo.
           </>
         }
         confirmLabel="Clear everything"

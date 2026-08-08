@@ -102,7 +102,7 @@ function ExpenseFormModal({
       open={open}
       onClose={onClose}
       title={editing ? 'Edit Expense' : 'Record Expense'}
-      description="Costs you paid — mortgage interest, repairs, taxes, insurance, and more."
+      description="What you paid — mortgage interest, repairs, taxes, insurance, and more."
       size="lg"
       footer={
         <>
@@ -137,7 +137,7 @@ function ExpenseFormModal({
           <UnitSelect propertyId={propertyId} value={unitId} onChange={setUnitId} allowNone noneLabel="— Whole property —" />
         </Field>
         <Field label="Notes" className="sm:col-span-2">
-          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What was the cost for, invoice #, warranty info…" />
+          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What it was for, invoice #, warranty info…" />
         </Field>
       </div>
 
@@ -275,7 +275,7 @@ export function Expenses() {
             <EmptyState
               icon={<ArrowUpCircle className="size-12" />}
               title="No expenses in this period"
-              description="Record your first expense, or widen the date range or filters."
+              description="Log your first expense, or widen the date range or filters."
               action={
                 <Button variant="danger" onClick={() => setModal({ open: true, editing: null })}>
                   <Plus className="size-4" /> Record Expense
@@ -350,7 +350,7 @@ export function Expenses() {
           </div>
         )}
         <div className="border-t border-slate-100 px-4 py-2.5 text-xs text-slate-400">
-          {formatNumber(filtered.length)} {filtered.length === 1 ? 'entry' : 'entries'} · Attach receipts for easy tax documentation.
+          {formatNumber(filtered.length)} {filtered.length === 1 ? 'entry' : 'entries'} · Attach receipts so tax time is easier.
         </div>
       </Card>
 

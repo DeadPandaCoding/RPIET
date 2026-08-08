@@ -1,12 +1,12 @@
 import { EXPENSE_CATEGORY_COLORS, INCOME_CATEGORY_COLORS } from './constants'
 
-type BadgeColor = 'emerald' | 'rose' | 'indigo' | 'amber' | 'sky' | 'slate' | 'violet'
+type BadgeColor = 'emerald' | 'rose' | 'indigo' | 'amber' | 'slate'
 
 const INCOME_BADGE: Record<string, BadgeColor> = {
   'Monthly Rent': 'emerald',
-  'Security Deposit': 'sky',
+  'Security Deposit': 'indigo',
   'Late Fee': 'amber',
-  'Utility Reimbursement': 'violet',
+  'Utility Reimbursement': 'indigo',
   Other: 'slate',
 }
 
@@ -15,9 +15,9 @@ const EXPENSE_BADGE: Record<string, BadgeColor> = {
   'Property Tax': 'rose',
   'Cleaning & Maintenance': 'emerald',
   'Appliance Repair': 'amber',
-  Insurance: 'sky',
+  Insurance: 'indigo',
   Utilities: 'slate',
-  'HOA Fees': 'violet',
+  'HOA Fees': 'indigo',
   'Capital Improvements': 'indigo',
   Other: 'slate',
 }

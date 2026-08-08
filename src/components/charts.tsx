@@ -1,4 +1,3 @@
-import { useId } from 'react'
 import {
   Area,
   Bar,
@@ -18,10 +17,12 @@ import {
 import { formatCurrency, formatCurrencyCompact } from '../lib/format'
 import type { CategorySlice, MonthPoint, PropertyPerformanceRow } from '../utils/reporting'
 
-// Palette: emerald = income, crimson red = expenses, champagne gold = net/mixed stats.
+// Palette: emerald = income, crimson red = expenses, navy = net/mixed stats.
+// The navy is a mid-tone so the net line stays visible on the light ivory
+// canvas AND the dark navy canvas.
 const INCOME_COLOR = '#10b981'
 const EXPENSE_COLOR = '#ef4444'
-const NET_COLOR = '#a88443'
+const NET_COLOR = '#55688c'
 
 // ---------------------------------------------------------------------------
 // Shared tooltip
@@ -59,24 +60,9 @@ function CurrencyTooltip({
 // ---------------------------------------------------------------------------
 
 export function IncomeExpenseTrendChart({ data }: { data: MonthPoint[] }) {
-  // Unique gradient ids in case more than one instance ever mounts.
-  const uid = useId().replace(/[^a-zA-Z0-9]/g, '')
-  const incomeFillId = `incomeFill-${uid}`
-  const expenseFillId = `expenseFill-${uid}`
   return (
     <ResponsiveContainer width="100%" height={300}>
       <ComposedChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-        <defs>
-          {/* Faint 5–10% area tints beneath the income/expense trend lines */}
-          <linearGradient id={incomeFillId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={INCOME_COLOR} stopOpacity={0.1} />
-            <stop offset="100%" stopColor={INCOME_COLOR} stopOpacity={0.02} />
-          </linearGradient>
-          <linearGradient id={expenseFillId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={EXPENSE_COLOR} stopOpacity={0.1} />
-            <stop offset="100%" stopColor={EXPENSE_COLOR} stopOpacity={0.02} />
-          </linearGradient>
-        </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" vertical={false} />
         <XAxis
           dataKey="label"
@@ -98,13 +84,15 @@ export function IncomeExpenseTrendChart({ data }: { data: MonthPoint[] }) {
           iconType="circle"
           iconSize={8}
         />
+        {/* Flat area tints — no gradients */}
         <Area
           type="monotone"
           dataKey="income"
           name="Income"
           stroke={INCOME_COLOR}
           strokeWidth={2.5}
-          fill={`url(#${incomeFillId})`}
+          fill={INCOME_COLOR}
+          fillOpacity={0.06}
           dot={false}
           activeDot={{ r: 4 }}
         />
@@ -114,7 +102,8 @@ export function IncomeExpenseTrendChart({ data }: { data: MonthPoint[] }) {
           name="Expenses"
           stroke={EXPENSE_COLOR}
           strokeWidth={2.5}
-          fill={`url(#${expenseFillId})`}
+          fill={EXPENSE_COLOR}
+          fillOpacity={0.06}
           dot={false}
           activeDot={{ r: 4 }}
         />

@@ -133,11 +133,6 @@ export function SignIn() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-canvas px-4 py-2">
-      {/* Decorative background — soft ink & champagne washes */}
-      <div className="pointer-events-none absolute -left-32 -top-32 size-96 rounded-full bg-indigo-300/20 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-40 -right-24 size-[28rem] rounded-full bg-violet-300/20 blur-3xl" />
-      <div className="pointer-events-none absolute left-1/2 top-1/3 size-64 -translate-x-1/2 rounded-full bg-sky-200/25 blur-3xl" />
-
       <div className="relative w-full max-w-md">
         <h1 className="sr-only">Valora</h1>
         <div className="mb-2 flex flex-col items-center text-center">
@@ -146,13 +141,13 @@ export function SignIn() {
           <span className="animate-entrance-settle inline-block">
             {/* Hover lift lives on its own span so it never clashes with the
                 entrance animation's held end-state transform */}
-            <span className="inline-block transition-transform duration-300 ease-out hover:-translate-y-1 hover:drop-shadow-[0_8px_24px_rgba(140,107,49,0.35)] motion-reduce:transition-none motion-reduce:hover:transform-none">
+            <span className="inline-block transition-transform duration-300 ease-out hover:-translate-y-1 hover:drop-shadow-[0_8px_24px_rgba(26,37,54,0.18)] motion-reduce:transition-none motion-reduce:hover:transform-none">
               <img src="/valora-logo.png" alt="" className="h-32 w-auto sm:h-36 dark:hidden" />
               <img src="/valora-logo-dark.png" alt="" className="hidden h-32 w-auto sm:h-36 dark:block" />
             </span>
           </span>
-          <p className="animate-entrance-rise mt-1.5 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-400 [animation-delay:0.15s]">Private Portfolio</p>
-          <p className="animate-entrance-rise mt-0.5 text-sm text-slate-500 [animation-delay:0.25s]">Sign in to manage your rental portfolio</p>
+          <p className="animate-entrance-rise mt-1.5 text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-400 [animation-delay:0.15s]">Rental Property Tracker</p>
+          <p className="animate-entrance-rise mt-0.5 text-sm text-slate-500 [animation-delay:0.25s]">Sign in to manage your rentals</p>
         </div>
 
         <div className="animate-entrance-lift rounded-2xl border border-slate-200 bg-surface p-6 shadow-xl shadow-black/5 dark:border-slate-700/70 dark:shadow-black/30 sm:p-8 [animation-delay:0.35s]">
@@ -201,7 +196,7 @@ export function SignIn() {
                 <button
                   type="button"
                   onClick={() => switchMode('signin')}
-                  className="mb-6 flex items-center gap-1 text-sm font-semibold text-indigo-600 transition-colors hover:text-indigo-700 dark:text-violet-400 dark:hover:text-violet-300"
+                  className="mb-6 flex items-center gap-1 text-sm font-semibold text-indigo-600 transition-colors hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
                 >
                   <ArrowLeft className="size-4" /> Back to sign in
                 </button>
@@ -234,7 +229,7 @@ export function SignIn() {
                         <button
                           type="button"
                           onClick={() => switchMode('reset')}
-                          className="font-semibold text-indigo-600 transition-colors hover:text-indigo-700 hover:underline dark:text-violet-400 dark:hover:text-violet-300"
+                          className="font-semibold text-indigo-600 transition-colors hover:text-indigo-700 hover:underline dark:text-indigo-400 dark:hover:text-indigo-300"
                         >
                           Forgot password?
                         </button>
@@ -274,7 +269,7 @@ export function SignIn() {
                         name="remember"
                         checked={remember}
                         onChange={(e) => setRemember(e.target.checked)}
-                        className="size-4 rounded border-slate-300 text-indigo-600 accent-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 dark:accent-violet-500"
+                        className="size-4 rounded border-slate-300 text-indigo-600 accent-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 dark:accent-indigo-400"
                       />
                       <span className="text-sm font-medium text-slate-600">
                         Remember me on this device
@@ -332,7 +327,7 @@ export function SignIn() {
 
               <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-xs text-slate-400">
                 <ShieldCheck className="size-3.5" />
-                Protected by Supabase Auth — your data is private to your account
+                Your data stays private to your account
               </p>
             </>
           )}

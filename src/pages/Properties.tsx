@@ -66,7 +66,7 @@ function PropertyFormModal({
       open={open}
       onClose={onClose}
       title={editing ? 'Edit Property' : 'Add Property'}
-      description="A property contains one or more rental units."
+      description="A property is a building with one or more rental units."
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
@@ -82,7 +82,7 @@ function PropertyFormModal({
           <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="124 Maple Street, Springfield" />
         </Field>
         <Field label="Notes">
-          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Maintenance schedule, reminders, etc." />
+          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Maintenance schedule, reminders, anything useful" />
         </Field>
       </div>
     </Modal>
@@ -231,7 +231,7 @@ export function Properties() {
         <EmptyState
           icon={<Building2 className="size-12" />}
           title="No properties yet"
-          description="Add your first property to start tracking units, tenants, income, and expenses."
+          description="Add your first property to start tracking units, tenants, rent, and expenses."
           action={
             <Button onClick={() => setPropModal({ open: true, editing: null })}>
               <Plus className="size-4" /> Add Property
@@ -259,7 +259,7 @@ export function Properties() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-base font-bold text-slate-900">{p.name}</h3>
-                    {occRate === 100 ? <Badge color="emerald">Full</Badge> : occRate >= 50 ? <Badge color="sky">{occRate}% occupied</Badge> : <Badge color="amber">{occRate}% occupied</Badge>}
+                    {occRate === 100 ? <Badge color="emerald">Full</Badge> : occRate >= 50 ? <Badge color="indigo">{occRate}% occupied</Badge> : <Badge color="amber">{occRate}% occupied</Badge>}
                   </div>
                   <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
                     <MapPin className="size-3.5" /> {p.address}
@@ -372,8 +372,8 @@ export function Properties() {
         title="Delete property?"
         message={
           <>
-            This will permanently delete <b>{deleteProp?.name}</b> along with all of its units and
-            related transactions. This cannot be undone.
+            This permanently deletes <b>{deleteProp?.name}</b>, all of its units, and the income
+            and expenses tied to it. There's no undo.
           </>
         }
       />
@@ -392,7 +392,7 @@ export function Properties() {
         title="Delete unit?"
         message={
           <>
-            Delete unit <b>{deleteUnit?.unit_name}</b>? Its tenant will be unassigned.
+            Delete unit <b>{deleteUnit?.unit_name}</b>? Its tenant will be moved back to unassigned.
           </>
         }
       />

@@ -16,9 +16,9 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const buttonVariants: Record<ButtonVariant, string> = {
-  // Navy CTA in light; champagne-gold CTA on the navy canvas in dark.
+  // Flat ink navy — the single accent, in both themes.
   primary:
-    'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-600/20 focus-visible:ring-indigo-500 dark:bg-violet-500 dark:text-indigo-950 dark:hover:bg-violet-400 dark:shadow-violet-500/20 dark:focus-visible:ring-violet-400',
+    'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-600/20 focus-visible:ring-indigo-500 dark:bg-indigo-600 dark:text-white dark:hover:bg-indigo-500 dark:shadow-indigo-600/20 dark:focus-visible:ring-indigo-400',
   secondary:
     'bg-surface text-slate-700 border border-slate-300 hover:bg-slate-50 focus-visible:ring-slate-400 dark:hover:bg-slate-200',
   ghost: 'text-slate-600 hover:bg-slate-100 focus-visible:ring-slate-300',
@@ -167,7 +167,7 @@ export function Field({
 }
 
 const fieldBase =
-  'w-full rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/25 dark:focus:border-violet-400 dark:focus:ring-violet-500/25'
+  'w-full rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/25 dark:focus:border-indigo-400 dark:focus:ring-indigo-500/25'
 
 // Auto-assign a stable per-mount id to every field so Chrome's console stops
 // warning "A form field element should have an id or name attribute" for
@@ -204,11 +204,9 @@ export function Textarea({ className = '', id, ...props }: TextareaHTMLAttribute
 const badgeColors: Record<string, string> = {
   emerald: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30',
   rose: 'bg-rose-50 text-rose-700 ring-rose-600/20 dark:bg-rose-500/15 dark:text-rose-300 dark:ring-rose-500/30',
-  indigo: 'bg-indigo-50 text-indigo-700 ring-indigo-600/20 dark:bg-indigo-900/60 dark:text-indigo-200 dark:ring-indigo-500/30',
+  indigo: 'bg-indigo-50 text-indigo-700 ring-indigo-600/20 dark:bg-indigo-500/15 dark:text-indigo-200 dark:ring-indigo-500/30',
   amber: 'bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30',
-  sky: 'bg-sky-50 text-sky-700 ring-sky-600/20 dark:bg-sky-500/15 dark:text-sky-300 dark:ring-sky-500/30',
   slate: 'bg-slate-100 text-slate-600 ring-slate-500/20',
-  violet: 'bg-violet-50 text-violet-700 ring-violet-600/20 dark:bg-violet-500/15 dark:text-violet-300 dark:ring-violet-500/30',
 }
 
 export function Badge({
@@ -290,7 +288,7 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 sm:items-center"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}

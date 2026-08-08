@@ -26,7 +26,7 @@ function LoadingScreen() {
         </span>
       </div>
       <p className="animate-entrance-rise mt-2 text-center text-xs font-medium uppercase tracking-[0.25em] text-slate-400 [animation-delay:0.15s]">
-        Loading your portfolio…
+        Loading your data…
       </p>
     </div>
   )
