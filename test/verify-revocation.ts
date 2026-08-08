@@ -4,6 +4,8 @@
  *
  * The check is protocol-level but exercises the exact same code paths the
  * app uses:
+ *   0. Verifies the scheduled cleanup: prune_session_revocations() exists,
+ *      removes rows older than the 1-day retention, and keeps fresh ones.
  *   1. Device A and Device B sign in as two independent Supabase sessions.
  *   2. Device B subscribes to Realtime on public.session_revocations filtered
  *      to its own session id — the identical subscription DataContext.tsx
@@ -227,6 +229,70 @@ try {
       r.status === 200,
       `${table} exists${r.status !== 200 ? ` (HTTP ${r.status} — run supabase/schema.sql)` : ''}`,
     )
+  }
+  if (failures > 0) process.exit(1)
+
+  // --- 0.5. Scheduled cleanup: old session_revocations rows get pruned ------
+  console.log('\nPrune (scheduled cleanup) verification:')
+  // The pg_cron-scheduled function must exist and be callable by the service
+  // role (schema.sql creates it and grants service_role; the cron job itself
+  // runs as postgres and cannot be inspected through PostgREST).
+  const pruneCall = await postgrest('/rpc/prune_session_revocations', {
+    method: 'POST',
+    headers: { Prefer: 'return=minimal' },
+    body: '{}',
+  })
+  const pruneAvailable = pruneCall.status === 200 || pruneCall.status === 204
+  check(
+    pruneAvailable,
+    `prune_session_revocations() callable${pruneAvailable ? '' : ` (HTTP ${pruneCall.status} — run supabase/schema.sql and enable pg_cron)`}`,
+  )
+  if (pruneAvailable) {
+    // A row older than the 1-day retention must be deleted…
+    const oldId = crypto.randomUUID()
+    const staleInsert = await postgrest('/session_revocations', {
+      method: 'POST',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({
+        id: oldId,
+        user_id: crypto.randomUUID(),
+        session_id: crypto.randomUUID(),
+        created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+      }),
+    })
+    check(staleInsert.status === 201 || staleInsert.status === 200, 'inserted a 2-day-old revocation row (probe)')
+    await postgrest('/rpc/prune_session_revocations', {
+      method: 'POST',
+      headers: { Prefer: 'return=minimal' },
+      body: '{}',
+    })
+    const staleAfter = await postgrest(`/session_revocations?select=id&id=eq.${oldId}`)
+    const staleRows = Array.isArray(staleAfter.data) ? (staleAfter.data as unknown[]) : []
+    check(staleRows.length === 0, 'the 2-day-old row was pruned')
+
+    // …while a fresh row is kept.
+    const freshId = crypto.randomUUID()
+    const freshInsert = await postgrest('/session_revocations', {
+      method: 'POST',
+      headers: { Prefer: 'return=minimal' },
+      body: JSON.stringify({
+        id: freshId,
+        user_id: crypto.randomUUID(),
+        session_id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
+      }),
+    })
+    check(freshInsert.status === 201 || freshInsert.status === 200, 'inserted a fresh revocation row (probe)')
+    await postgrest('/rpc/prune_session_revocations', {
+      method: 'POST',
+      headers: { Prefer: 'return=minimal' },
+      body: '{}',
+    })
+    const freshAfter = await postgrest(`/session_revocations?select=id&id=eq.${freshId}`)
+    const freshRows = Array.isArray(freshAfter.data) ? (freshAfter.data as unknown[]) : []
+    check(freshRows.length === 1, 'the fresh row survived the prune')
+    // Remove the probe row so the test leaves no residue.
+    await postgrest(`/session_revocations?id=eq.${freshId}`, { method: 'DELETE' })
   }
   if (failures > 0) process.exit(1)
 

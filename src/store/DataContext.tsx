@@ -34,8 +34,8 @@ import {
   uploadReceipt as uploadReceiptApi,
 } from '../lib/api'
 import { loadTable } from '../lib/storage'
-import { getSupabase, setRemembered } from '../lib/supabase'
-import { sessionIdFromToken } from '../lib/sessions'
+import { getSupabase, isRemembered, setRemembered } from '../lib/supabase'
+import { fetchActiveSessions, sessionIdFromToken } from '../lib/sessions'
 import {
   onAuthStateChange,
   resetPasswordForEmail,
@@ -74,6 +74,85 @@ const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
 
 const isIssuedAtFutureError = (err: unknown) =>
   /issued at future|PGRST303/i.test(err instanceof Error ? err.message : String(err))
+
+// Consider an access token near its real expiry when deciding whether to probe
+// the refresh token (a token inside this margin can already be rejected by
+// PostgREST / the sessions service).
+const TOKEN_EXPIRY_MARGIN_MS = 60_000
+
+/**
+ * Signs THIS tab out locally without touching any other tab: clears every
+ * supabase token key (auth token, user blob, PKCE verifiers) from both stores
+ * and reloads. The server has already killed the session's refresh tokens, so
+ * nothing can restore it. Deliberately NOT sb.auth.signOut(): that emits
+ * SIGNED_OUT to every other tab of the same browser profile via supabase-js's
+ * BroadcastChannel multi-tab sync — which would also sign out the device that
+ * performed the revoke.
+ */
+function hardLocalSignOut() {
+  for (const store of [window.localStorage, window.sessionStorage]) {
+    for (const key of Object.keys(store)) {
+      if (key.includes('-auth-token')) store.removeItem(key)
+    }
+  }
+  window.location.reload()
+}
+
+type RefreshProbe = 'alive' | 'dead' | 'unknown'
+
+/**
+ * Asks GoTrue directly whether the stored refresh token still works, WITHOUT
+ * letting auth-js handle the failure — auth-js's refresh-failure handling
+ * ends in `_removeSession()`, which broadcasts SIGNED_OUT to every tab of the
+ * same browser profile over BroadcastChannel. On success the rotated tokens
+ * are handed back via `setSession` (which emits SIGNED_IN, never SIGNED_OUT —
+ * and other tabs only adopt the session when its id matches theirs, so
+ * independent per-tab sessions are unaffected), keeping auth-js's internal
+ * state and token rotation in sync. Network hiccups and non-auth HTTP
+ * failures return 'unknown' — a transient error must never sign the user out.
+ */
+async function probeRefreshToken(): Promise<RefreshProbe> {
+  const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
+  const sb = getSupabase()
+  if (!url || !anonKey || !sb) return 'unknown'
+  const { data } = await sb.auth.getSession()
+  const refreshToken = data.session?.refresh_token
+  if (!refreshToken) return 'unknown'
+  try {
+    const res = await fetch(`${url}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    })
+    // GoTrue rejects a dead refresh token with 400 invalid_grant / 401 / 403 /
+    // 422 — the session was revoked. Any other failure (429, 5xx, network)
+    // must not sign the user out.
+    if (res.status === 400 || res.status === 401 || res.status === 403 || res.status === 422) {
+      // Rotation-race guard: if auth-js refreshed the session while we were
+      // probing, our request used a stale copy of the refresh token and the
+      // rejection is not evidence of a revoked session — stay signed in.
+      const { data: after } = await sb.auth.getSession()
+      if (after.session && after.session.refresh_token !== refreshToken) return 'unknown'
+      return 'dead'
+    }
+    if (!res.ok) return 'unknown'
+    const json = (await res.json()) as { access_token?: string; refresh_token?: string }
+    if (!json.access_token || !json.refresh_token) return 'unknown'
+    // Hand the rotated tokens to auth-js via setSession (which rebuilds the
+    // session — including the user, via a /user call with the new token — so
+    // storage never holds a userless session) without ever letting auth-js
+    // observe the earlier refresh failure.
+    await sb.auth.setSession({ access_token: json.access_token, refresh_token: json.refresh_token })
+    return 'alive'
+  } catch {
+    return 'unknown'
+  }
+}
 
 export interface DataContextValue {
   mode: StorageMode
@@ -233,14 +312,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
             // Defensive: never sign out based on another session's event.
             const row = payload.new as { session_id?: string } | null
             if (!row || row.session_id !== sid) return
-            // Local-only sign-out: clear every supabase token key (auth token,
-            // user blob, PKCE verifiers) from both stores, then reload.
-            for (const store of [window.localStorage, window.sessionStorage]) {
-              for (const key of Object.keys(store)) {
-                if (key.includes('-auth-token')) store.removeItem(key)
-              }
-            }
-            window.location.reload()
+            // Local-only sign-out: clear this tab's own token keys and reload
+            // (see hardLocalSignOut) — no auth-js signOut, so no SIGNED_OUT
+            // broadcast to the other tabs of this browser profile. The device
+            // that performed the revoke stays signed in.
+            hardLocalSignOut()
           },
         )
         .subscribe()
@@ -252,16 +328,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [user])
 
   // Session health check (FALLBACK to the realtime subscription above).
-  // Revoking a session kills its refresh token and session row server-side,
-  // but the already-issued access-token JWT stays valid for PostgREST until
-  // it expires (~1 hour) — and if Realtime is unavailable (blocked
-  // websockets, a subscription that never connected) the revoked device could
-  // keep working until then. Periodically refreshing the token is the safety
-  // net: once the refresh token is gone the refresh returns a 401 and
-  // supabase-js clears the local session and emits SIGNED_OUT (handled
-  // above), signing the user out. Offline/network failures do NOT sign the
-  // user out — supabase-js only clears the session on an auth 401, never on a
-  // fetch error.
+  // Revoking a session deletes its auth.sessions row and refresh tokens, but a
+  // still-valid access token (~1h) keeps working for PostgREST — and if
+  // Realtime is unavailable (blocked websockets, a subscription that never
+  // connected) the revoked device could keep working until then. This check is
+  // the safety net: it periodically asks the sessions service whether OUR
+  // session row still exists and, when it is gone, signs this tab out locally.
+  //
+  // Deliberately NOT `sb.auth.refreshSession()`: this auth-js build treats a
+  // failed refresh on a still-valid access token as a proactive refresh and
+  // does not sign out (so the old fallback never fired within the token's ~1h
+  // life), and once the access token has actually expired a failed refresh
+  // reaches `_removeSession()`, which broadcasts SIGNED_OUT to every tab of
+  // the same browser profile — signing out the device that performed the
+  // revoke too. The membership check below never touches auth-js's refresh
+  // path, so it can neither miss a revoke nor broadcast one. Offline/server
+  // errors do NOT sign the user out: the check only fires when the sessions
+  // service answers AND our session is gone (or a direct refresh-token probe
+  // confirms the token is dead).
   useEffect(() => {
     const sb = getSupabase()
     if (!sb || authLoading) return
@@ -272,19 +356,37 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (now - lastCheck < 30_000) return
       lastCheck = now
       const { data } = await sb.auth.getSession()
-      if (!data.session) return
-      await sb.auth.refreshSession()
-    }
-    const onActive = () => {
-      if (document.visibilityState === 'visible') void check()
+      const session = data.session
+      const sid = session ? sessionIdFromToken(session.access_token) : null
+      if (!session || !sid) return
+      const res = await fetchActiveSessions()
+      if (res.ok) {
+        // The revoke deletes the session row, so our own id missing from the
+        // list means this device was revoked.
+        if (!res.sessions.some((s) => s.id === sid)) hardLocalSignOut()
+        return
+      }
+      // The sessions service refused the token (or is down). When the access
+      // token has expired, probe the refresh token directly — bypassing
+      // auth-js's broadcasting failure handling — so a genuinely dead session
+      // still signs out without touching other tabs. Only for independent
+      // per-tab sessions (remember-me off): a shared remembered session's
+      // tabs legitimately share fate, and probing the same token from two
+      // tabs would race the rotation.
+      const expired = (session.expires_at ?? 0) * 1000 < Date.now() + TOKEN_EXPIRY_MARGIN_MS
+      if (expired && !isRemembered()) {
+        const state = await probeRefreshToken()
+        if (state === 'dead') hardLocalSignOut()
+        // 'alive': tokens rotated via setSession — the next check re-lists.
+        // 'unknown': transient failure — stay signed in.
+      }
     }
     void check()
-    // Periodic re-check while the tab is visible, so a device that stays in
-    // the foreground (never refocused) still gets signed out within a minute
-    // even if the realtime path is unavailable.
-    const interval = window.setInterval(() => {
-      if (document.visibilityState === 'visible') void check()
-    }, 60_000)
+    // Heartbeat while the tab stays open — foreground or backgrounded — so a
+    // device that is never refocused is still signed out within about a minute
+    // of being revoked, long before its access token can expire.
+    const interval = window.setInterval(() => void check(), 60_000)
+    const onActive = () => void check()
     window.addEventListener('focus', onActive)
     document.addEventListener('visibilitychange', onActive)
     return () => {

@@ -57,8 +57,11 @@ your browser — no setup required. You can wipe or reload demo data anytime in 
    (GoTrue has no admin endpoint for this, so sessions are read from `auth.sessions`
    through the API with the service-role key). Revoking a device deletes its session
    **and its refresh tokens** and broadcasts a Realtime event, so the revoked device
-   is signed out **instantly** — even with its tab open. An optional security setting (Settings → Devices & Sessions) signs out every other device automatically whenever you change your password — enforced by a database trigger, so it applies to every device. **Already run this file before?** Re-run it after pulling updates to pick
-   up new objects.
+   is signed out **instantly** — even with its tab open. If Realtime is unavailable
+   (e.g. blocked websockets), a ~60s session health check still signs the device out
+   — using only that tab (never a broadcast that could sign out other devices in the
+   same browser profile). Old revocation records are pruned automatically by a daily
+   **pg_cron** job (`prune_session_revocations`, 03:00 server time) — enable the   pg_cron extension (Database → Extensions) if the schema step asks for it. A read-only `cron_job_status()` window function is also created so `npm run check:supabase` can verify the cron job's schedule and run history automatically. An optional security setting (Settings → Devices & Sessions) signs out every other device automatically whenever you change your password — enforced by a database trigger, so it applies to every device. **Already run this file before?** Re-run it after pulling updates to pick up new objects.
 3. Copy `.env.example` to `.env` and fill in your keys:
 
    ```
@@ -97,8 +100,10 @@ supabase/
 | `npm run lint`   | Run oxlint                    |
 | `npm run preview`| Preview the production build  |
 | `npm run smoke`  | Run the data/reporting smoke tests |
+| `npm run check:supabase` | Verify the Supabase connection, tables, RLS, and the pg_cron prune job (schedule + run history) — set `SUPABASE_SERVICE_ROLE_KEY` to include the cron checks |
+| `npm run check:cron:arm` / `npm run check:cron:verify` | Belt-and-braces schedule check: `arm` plants a 2-day-old marker row in `session_revocations` (idempotent), `verify` confirms the nightly 03:00 prune job removed it — needs `VITE_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` |
 | `npm run test:revocation` | Verify realtime cross-device sign-out on password change (needs Supabase + a test account) |
-| `npm run test:revoke-browser` | Two-tab browser check of the revoke flow: the revoked tab signs out instantly and the revoking tab stays signed in (needs Chrome, the dev server running with Supabase keys, and a test account) |
+| `npm run test:revoke-browser` | Two-tab browser check of the revoke flow: the revoked tab signs out instantly and the revoking tab stays signed in — covering the Realtime path AND the health-check fallback with Realtime blocked (needs Chrome, the dev server running with Supabase keys, and a test account) |
 | `npm run scan:secrets` | Scan for accidentally committed secrets |
 
 > **Local dev note:** `vite.config.ts` proxies `/api` to the deployed site

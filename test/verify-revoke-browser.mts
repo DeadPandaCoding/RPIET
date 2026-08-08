@@ -8,13 +8,21 @@
  * every tab of the same browser profile over BroadcastChannel, so a revoked
  * tab's sign-out used to also sign out the tab that performed the revoke.
  * The app now clears only the revoked tab's own tokens and reloads (no
- * auth-js signOut, no broadcast); this check enforces that:
+ * auth-js signOut, no broadcast); this check enforces that in BOTH paths:
  *
+ *   Phase 1 — Realtime path (the fast path):
  *   1. Tab 2 (the revoked device) lands on the sign-in screen quickly
  *      (Realtime → local reset, ~1s — NOT the old minutes-long polling).
  *   2. Tab 1 (the device that clicked Revoke) STAYS signed in.
- *   3. Server-side, exactly one session remains (Tab 1's) and the account is
- *      returned to zero sessions afterwards.
+ *   3. Server-side, exactly one session remains (Tab 1's).
+ *
+ *   Phase 2 — Health-check fallback (Realtime unavailable): WebSocket is
+ *   stubbed out in Tab 2 so the Realtime subscription can never deliver. The
+ *   app's session health check (DataContext, ~60s heartbeat) is the only
+ *   remaining sign-out path. It must:
+ *   4. Sign Tab 2 out anyway (within the fallback window), and
+ *   5. Still leave Tab 1 signed in — proving the fallback also never
+ *      broadcasts SIGNED_OUT to other tabs of the profile.
  *
  * Prerequisites:
  *   - puppeteer-core (devDependency) and a Chrome/Chromium install
@@ -36,7 +44,8 @@
  *
  * Exit code 0 = every check passed and the account was restored to zero
  * sessions; 1 = something failed. Use a dedicated test account — the script
- * signs in twice and forcibly clears every session it creates.
+ * signs in twice (four times total with phase 2) and forcibly clears every
+ * session it creates.
  */
 import { existsSync } from 'node:fs'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
@@ -54,6 +63,11 @@ const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY
 // Realtime delivers the revocation in ~0.7-1.3s (the reload adds a bit);
 // anything under this is "instant" compared with the old polling fallback.
 const SIGN_OUT_THRESHOLD_MS = 4000
+
+// Phase 2: with Realtime blocked, the revoked tab signs out on the health
+// check's 60s heartbeat (plus browser background-tab timer throttling and the
+// page reload), so allow a generous window. Overridable for slow machines.
+const FALLBACK_TIMEOUT_MS = Number(process.env.FALLBACK_TIMEOUT_MS ?? 150_000)
 
 const missing = [
   ['TEST_USER_EMAIL', EMAIL],
@@ -148,17 +162,17 @@ async function zeroAccount(): Promise<string | null> {
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 
+const PASSWORD_HINT =
+  'The test account password may have been left changed by a failed ' +
+  'test:revocation run (it changes the password mid-run). Re-run that check once to ' +
+  'restore it, or reset the password in the Supabase dashboard.'
+
 /**
  * Signs in on a page. "Remember me" stays UNCHECKED: the app's auth storage
  * then keeps the session in that tab's sessionStorage, so the two tabs hold
  * genuinely independent sessions (the multi-tab BroadcastChannel is the thing
  * under test — not shared localStorage).
  */
-const PASSWORD_HINT =
-  'The test account password may have been left changed by a failed ' +
-  'test:revocation run (it changes the password mid-run). Re-run that check once to ' +
-  'restore it, or reset the password in the Supabase dashboard.'
-
 async function signIn(page: Page, label: string) {
   await page.goto(APP_URL, { waitUntil: 'networkidle2', timeout: 60_000 })
   await page.waitForSelector('#auth-email', { timeout: 30_000 })
@@ -208,6 +222,153 @@ function decodeSid(page: Page) {
   })
 }
 
+/** Navigates the sidebar Settings button and waits for the page. */
+async function openSettings(page: Page) {
+  await page.evaluate(() => {
+    const settingsBtn = Array.from(document.querySelectorAll('button')).find(
+      (b) => b.textContent?.trim() === 'Settings',
+    )
+    ;(settingsBtn as HTMLButtonElement | undefined)?.click()
+  })
+  await page.waitForFunction(
+    () => document.querySelector('header h1')?.textContent?.includes('Settings'),
+    { polling: 100, timeout: 15_000 },
+  )
+}
+
+/**
+ * Returns the state of the "Active sessions" list rows. Scoped to that card:
+ * finds the <ul> by walking UP from the heading (the list sits below the card
+ * header), so unrelated lists elsewhere on the page can never be mistaken for
+ * the session list. (Inlined in each evaluate — puppeteer can't serialize
+ * function args.)
+ */
+function sessionRows(page: Page) {
+  return page.evaluate(() => {
+    const h4 = Array.from(document.querySelectorAll('h4')).find((h) =>
+      (h.textContent ?? '').includes('Active sessions'),
+    )
+    let node = h4?.parentElement ?? null
+    let ul: Element | null = null
+    while (node) {
+      const found = node.querySelector('ul')
+      if (found) {
+        ul = found
+        break
+      }
+      node = node.parentElement
+    }
+    const lis = Array.from(ul?.querySelectorAll('li') ?? [])
+    return lis.map((li) => ({
+      hasRevoke: Array.from(li.querySelectorAll('button')).some((b) => b.textContent?.trim() === 'Revoke'),
+      isThisDevice: (li.textContent ?? '').includes('This device'),
+    }))
+  })
+}
+
+/**
+ * Clicks Revoke on the first non-current device and confirms the dialog.
+ * Assumes the Settings page is open. Returns the timestamp taken right before
+ * clicking "Sign out device".
+ */
+async function revokeOtherDevice(page: Page): Promise<number> {
+  await waitForSessionList(page)
+  await page.evaluate(() => {
+    const h4 = Array.from(document.querySelectorAll('h4')).find((h) =>
+      (h.textContent ?? '').includes('Active sessions'),
+    )
+    let node = h4?.parentElement ?? null
+    let ul: Element | null = null
+    while (node) {
+      const found = node.querySelector('ul')
+      if (found) {
+        ul = found
+        break
+      }
+      node = node.parentElement
+    }
+    const lis = Array.from(ul?.querySelectorAll('li') ?? [])
+    const target = lis.find(
+      (li) =>
+        !(li.textContent ?? '').includes('This device') &&
+        Array.from(li.querySelectorAll('button')).some((b) => b.textContent?.trim() === 'Revoke'),
+    )
+    const revokeBtn = Array.from(target?.querySelectorAll('button') ?? []).find(
+      (b) => b.textContent?.trim() === 'Revoke',
+    )
+    ;(revokeBtn as HTMLButtonElement | undefined)?.click()
+  })
+  // Confirmation dialog: "Sign out this device?" → confirm "Sign out device".
+  await page.waitForFunction(
+    () =>
+      Array.from(document.querySelectorAll('button')).some(
+        (b) => b.textContent?.trim() === 'Sign out device',
+      ),
+    { polling: 100, timeout: 10_000 },
+  )
+  const t0 = Date.now()
+  await page.evaluate(() => {
+    const btn = Array.from(document.querySelectorAll('button')).find(
+      (b) => b.textContent?.trim() === 'Sign out device',
+    )
+    ;(btn as HTMLButtonElement | undefined)?.click()
+  })
+  return t0
+}
+
+/**
+ * Replaces window.WebSocket in a page with a stub that never connects, so the
+ * Realtime subscription can never deliver a revocation — forcing the app's
+ * session health-check fallback to do the work. A structurally valid stub
+ * keeps realtime-js quiet (it retries silently instead of crashing the app).
+ *
+ * NOTE: the TS casts inside are stripped by tsx when the function is
+ * serialized for the page (Function.prototype.toString), so the browser only
+ * ever sees plain JS here.
+ */
+const blockRealtime = () => {
+  // Marker so the test can verify the stub is actually in effect.
+  ;(window as unknown as { __wsBlocked: boolean }).__wsBlocked = true
+  class BlockedWebSocket {
+    static CONNECTING = 0
+    static OPEN = 1
+    static CLOSING = 2
+    static CLOSED = 3
+    readyState = 0
+    binaryType = 'blob'
+    onopen: unknown = null
+    onmessage: unknown = null
+    onerror: unknown = null
+    onclose: unknown = null
+    send() {}
+    close() {}
+    addEventListener() {}
+    removeEventListener() {}
+  }
+  window.WebSocket = BlockedWebSocket as unknown as typeof WebSocket
+}
+
+/** Real-time plumbing noise we expect once WebSocket is blocked (phase 2). */
+const isRealtimeNoise = (text: string) => /realtime|websocket|channel|subscribe/i.test(text)
+
+/** Waits until the session list has rendered (a "Revoke" button exists). */
+async function waitForSessionList(page: Page) {
+  await page.waitForFunction(
+    () => Array.from(document.querySelectorAll('button')).some((b) => b.textContent?.trim() === 'Revoke'),
+    { polling: 100, timeout: 20_000 },
+  )
+}
+
+/** Waits until the page shows the sign-in form (or the timeout elapses). */
+async function waitSignedOut(page: Page, deadline: number): Promise<number | null> {
+  while (Date.now() < deadline) {
+    const signedOut = await page.evaluate(() => !!document.querySelector('#auth-email')).catch(() => false)
+    if (signedOut) return Date.now()
+    await sleep(500)
+  }
+  return null
+}
+
 // ---- Main flow ------------------------------------------------------------
 
 let userId: string | null = null
@@ -228,17 +389,22 @@ async function main() {
       defaultViewport: { width: 1440, height: 900 },
     })
 
-    console.log('\n=== Tab 1 (Device A — will do the revoking) ===')
+    console.log('\n=== Phase 1: Realtime path ===')
+    console.log('=== Tab 1 (Device A — will do the revoking) ===')
     tab1 = await browser.newPage()
     tab1.on('console', (m) => {
-      if (m.type() === 'error') console.log(`  [tab1 console.error] ${m.text().slice(0, 200)}`)
+      if (m.type() === 'error' && !isRealtimeNoise(m.text())) {
+        console.log(`  [tab1 console.error] ${m.text().slice(0, 200)}`)
+      }
     })
     await signIn(tab1, 'Tab 1')
 
     console.log('\n=== Tab 2 (Device B — the revoke target) ===')
     tab2 = await browser.newPage()
     tab2.on('console', (m) => {
-      if (m.type() === 'error') console.log(`  [tab2 console.error] ${m.text().slice(0, 200)}`)
+      if (m.type() === 'error' && !isRealtimeNoise(m.text())) {
+        console.log(`  [tab2 console.error] ${m.text().slice(0, 200)}`)
+      }
     })
     await signIn(tab2, 'Tab 2')
 
@@ -249,109 +415,21 @@ async function main() {
     check(sid1 !== sid2 && !sid1.startsWith('(') && !sid2.startsWith('('), 'tabs hold independent sessions')
 
     console.log('\n=== Tab 1 opens Settings → Devices & Sessions ===')
-    await tab1.evaluate(() => {
-      const settingsBtn = Array.from(document.querySelectorAll('button')).find(
-        (b) => b.textContent?.trim() === 'Settings',
-      )
-      ;(settingsBtn as HTMLButtonElement | undefined)?.click()
-    })
-    await tab1.waitForFunction(
-      () => document.querySelector('header h1')?.textContent?.includes('Settings'),
-      { polling: 100, timeout: 15_000 },
-    )
+    await openSettings(tab1)
     console.log('  ✓ Settings page loaded')
 
-    // The session list renders a "Revoke" button per non-current device.
-    await tab1.waitForFunction(
-      () =>
-        Array.from(document.querySelectorAll('button')).some((b) => b.textContent?.trim() === 'Revoke'),
-      { polling: 100, timeout: 20_000 },
-    )
-    // Scoped to the "Active sessions" card: find the <ul> by walking UP from
-    // the heading (the list sits below the card header), so unrelated lists
-    // elsewhere on the page can never be mistaken for the session list.
-    // (Inlined in each evaluate — puppeteer can't serialize function args.)
-    const sessionRows = (p: Page) =>
-      p.evaluate(() => {
-        const h4 = Array.from(document.querySelectorAll('h4')).find((h) =>
-          (h.textContent ?? '').includes('Active sessions'),
-        )
-        let node = h4?.parentElement ?? null
-        let ul: Element | null = null
-        while (node) {
-          const found = node.querySelector('ul')
-          if (found) {
-            ul = found
-            break
-          }
-          node = node.parentElement
-        }
-        const lis = Array.from(ul?.querySelectorAll('li') ?? [])
-        return lis.map((li) => ({
-          hasRevoke: Array.from(li.querySelectorAll('button')).some((b) => b.textContent?.trim() === 'Revoke'),
-          isThisDevice: (li.textContent ?? '').includes('This device'),
-        }))
-      })
+    await waitForSessionList(tab1)
     const listState = await sessionRows(tab1)
     check(listState.length === 2, 'Tab 1 sees exactly 2 active sessions (both tabs)')
     check(listState.some((r) => r.hasRevoke && !r.isThisDevice), 'the other device (Tab 2) has a Revoke button')
 
     console.log('\n=== Tab 1 revokes Tab 2 through the real UI ===')
-    await tab1.evaluate(() => {
-      const h4 = Array.from(document.querySelectorAll('h4')).find((h) =>
-        (h.textContent ?? '').includes('Active sessions'),
-      )
-      let node = h4?.parentElement ?? null
-      let ul: Element | null = null
-      while (node) {
-        const found = node.querySelector('ul')
-        if (found) {
-          ul = found
-          break
-        }
-        node = node.parentElement
-      }
-      const lis = Array.from(ul?.querySelectorAll('li') ?? [])
-      const target = lis.find(
-        (li) =>
-          !(li.textContent ?? '').includes('This device') &&
-          Array.from(li.querySelectorAll('button')).some((b) => b.textContent?.trim() === 'Revoke'),
-      )
-      const revokeBtn = Array.from(target?.querySelectorAll('button') ?? []).find(
-        (b) => b.textContent?.trim() === 'Revoke',
-      )
-      ;(revokeBtn as HTMLButtonElement | undefined)?.click()
-    })
-    // Confirmation dialog: "Sign out this device?" → confirm "Sign out device".
-    await tab1.waitForFunction(
-      () =>
-        Array.from(document.querySelectorAll('button')).some(
-          (b) => b.textContent?.trim() === 'Sign out device',
-        ),
-      { polling: 100, timeout: 10_000 },
-    )
-    const t0 = Date.now()
-    await tab1.evaluate(() => {
-      const btn = Array.from(document.querySelectorAll('button')).find(
-        (b) => b.textContent?.trim() === 'Sign out device',
-      )
-      ;(btn as HTMLButtonElement | undefined)?.click()
-    })
+    const t0 = await revokeOtherDevice(tab1)
     console.log(`  ✓ clicked "Sign out device" at t=${t0}`)
 
-    // --- Assertions ---------------------------------------------------------
-    console.log('\nAssertions:')
-    // Tab 2 must land on the sign-in screen (Realtime → local reset).
-    let t1: number | null = null
-    const deadline = t0 + SIGN_OUT_THRESHOLD_MS + 5000
-    while (Date.now() < deadline) {
-      const signedOut = await tab2.evaluate(() => !!document.querySelector('#auth-email')).catch(() => false)
-      if (signedOut) {
-        t1 = Date.now()
-        break
-      }
-      await sleep(200)
-    }
+    // --- Phase 1 assertions -------------------------------------------------
+    console.log('\nAssertions (phase 1 — Realtime):')
+    const t1 = await waitSignedOut(tab2, t0 + SIGN_OUT_THRESHOLD_MS + 5000)
     const latency = t1 ? t1 - t0 : null
     check(
       t1 !== null,
@@ -395,6 +473,82 @@ async function main() {
     if (userId) {
       const remaining = await countSessions(userId)
       check(remaining === 1, `server-side: exactly 1 session remains after the revoke (${remaining})`)
+    }
+
+    // --- Phase 2: health-check fallback (Realtime blocked) ------------------
+    console.log('\n=== Phase 2: Realtime blocked — the health-check fallback must sign Tab 2 out ===')
+    // Stub out WebSocket in Tab 2 so its Realtime subscription can never
+    // connect or deliver a revocation. The session health check (DataContext,
+    // ~60s heartbeat) is the only remaining sign-out path — and it must also
+    // leave Tab 1 signed in.
+    //
+    // First leave the app entirely (about:blank): the stub applies to FUTURE
+    // navigations, and Tab 2 is currently already on APP_URL — a same-URL
+    // `goto` is not guaranteed to produce a fresh document, so without this
+    // the app would keep its original (unblocked) WebSocket and the phase
+    // would silently test the Realtime path again.
+    await tab2.goto('about:blank')
+    await tab2.evaluateOnNewDocument(blockRealtime)
+    await signIn(tab2, 'Tab 2 (fallback)')
+
+    const wsBlocked = await tab2
+      .evaluate(() => (window as unknown as { __wsBlocked?: boolean }).__wsBlocked === true)
+      .catch(() => false)
+    check(wsBlocked, 'Tab 2 has the WebSocket stub installed (Realtime cannot connect)')
+
+    const sid2b = await decodeSid(tab2)
+    check(sid2b !== sid1 && !sid2b.startsWith('('), 'Tab 2 holds a fresh independent session (Realtime blocked)')
+
+    // Tab 1 is still signed in on Settings from phase 1 (that's the point of
+    // the fix). Reload it so the session list reflects Tab 2's new session.
+    await tab1.reload({ waitUntil: 'networkidle2', timeout: 60_000 })
+    await openSettings(tab1)
+    await waitForSessionList(tab1)
+    const listState2 = await sessionRows(tab1)
+    check(listState2.length === 2, 'Tab 1 sees exactly 2 active sessions again')
+
+    console.log('\n=== Tab 1 revokes Tab 2 again (Realtime blocked) ===')
+    const t0f = await revokeOtherDevice(tab1)
+    console.log(`  ✓ clicked "Sign out device" (fallback phase) at t=${t0f}`)
+
+    // --- Phase 2 assertions -------------------------------------------------
+    console.log('\nAssertions (phase 2 — no Realtime):')
+    const t1f = await waitSignedOut(tab2, t0f + FALLBACK_TIMEOUT_MS)
+    const fLatency = t1f ? t1f - t0f : null
+    check(
+      t1f !== null,
+      fLatency !== null
+        ? `Tab 2 (fallback) signed out ${fLatency}ms after the revoke — no Realtime`
+        : `Tab 2 was NOT signed out within ${FALLBACK_TIMEOUT_MS}ms with Realtime blocked`,
+    )
+
+    let tab1Alive2 = false
+    let tab1Dump2 = ''
+    try {
+      await tab1.waitForFunction(
+        () => (document.querySelector('header h1')?.textContent ?? '').includes('Settings'),
+        { polling: 100, timeout: 8000 },
+      )
+      tab1Alive2 = true
+    } catch {
+      tab1Dump2 = await tab1
+        .evaluate(() => {
+          const url = location.href
+          const signedOut = !!document.querySelector('#auth-email')
+          return `url=${url} signInScreen=${signedOut} body="${document.body.innerText.slice(0, 120).replace(/\s+/g, ' ')}"`
+        })
+        .catch(() => '(evaluate failed)')
+    }
+    check(
+      tab1Alive2,
+      tab1Alive2
+        ? 'Tab 1 STAYED signed in through the fallback sign-out too'
+        : `Tab 1 was signed out too (fallback path) — ${tab1Dump2}`,
+    )
+
+    if (userId) {
+      const remaining2 = await countSessions(userId)
+      check(remaining2 === 1, `server-side: exactly 1 session remains after the fallback revoke (${remaining2})`)
     }
   } catch (err) {
     failures++

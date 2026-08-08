@@ -350,7 +350,8 @@ as $$
   ),
   -- The broadcast rows are only useful for the seconds it takes to deliver
   -- the realtime event, so each revoke also prunes old ones (keeps the table
-  -- from growing without bound).
+  -- from growing without bound). Same 1-day retention as the scheduled
+  -- prune_session_revocations() below — keep the two in sync.
   prune as (
     delete from public.session_revocations
      where created_at < now() - interval '1 day'
@@ -361,6 +362,104 @@ as $$
 $$;
 
 grant execute on function public.revoke_owner_session(uuid, uuid) to service_role;
+
+-- ---------------------------------------------------------------------------
+-- MAINTENANCE — scheduled cleanup of session_revocations
+-- The revocation-broadcast rows are only useful for the seconds it takes to
+-- deliver the realtime event. revoke_owner_session above prunes rows older
+-- than a day inline, but only when a NEW revoke happens; this pg_cron job
+-- guarantees old rows are purged even during quiet periods, so the table
+-- never grows without bound. It also removes fake/abandoned rows the way any
+-- other prune would.
+--
+-- Requires the pg_cron extension (Supabase: Database → Extensions → enable
+-- pg_cron, or run `create extension pg_cron;` in the SQL Editor — the line
+-- below does it for you when the project allows it). The job runs as the
+-- scheduler role (postgres), so it does not need any app-level grant.
+-- ---------------------------------------------------------------------------
+create extension if not exists pg_cron;
+
+create or replace function public.prune_session_revocations()
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  delete from public.session_revocations
+   where created_at < now() - interval '1 day';
+$$;
+
+-- Clients must never call this directly (it is security-definer, so an
+-- authenticated caller could otherwise wipe other users' revocation rows by
+-- bypassing RLS). Only the scheduler (postgres) and the service role (used by
+-- test/verify-revocation.ts) may execute it.
+revoke execute on function public.prune_session_revocations() from public;
+revoke execute on function public.prune_session_revocations() from anon, authenticated;
+grant execute on function public.prune_session_revocations() to service_role;
+
+-- Idempotent schedule: replace the job on every run so re-running the file
+-- picks up schedule changes instead of accumulating duplicates.
+do $$
+begin
+  if exists (select 1 from cron.job where jobname = 'prune-session-revocations') then
+    perform cron.unschedule('prune-session-revocations');
+  end if;
+  -- NOTE: the command is a plain string literal — a nested $$...$$ here would
+  -- close the enclosing do $$ block (same empty dollar-quote tag) and fail.
+  perform cron.schedule(
+    'prune-session-revocations',
+    '0 3 * * *', -- daily at 03:00 (server timezone)
+    'select public.prune_session_revocations()'
+  );
+end
+$$;
+
+-- Read-only window into the pg_cron job + run history for the verification
+-- script (test/check-supabase.ts). The cron schema is not exposed to
+-- PostgREST, so this security-definer function is the only way the REST API
+-- can confirm the nightly prune job is scheduled and actually runs. It reads
+-- cron.job joined to the job's most recent cron.job_run_details row (joined on
+-- jobid, since older pg_cron builds have no jobname column there), so a job
+-- that has not run yet still returns its schedule with NULL run fields.
+--
+-- SECURITY: never grant execute to anon/authenticated — it is security-definer
+-- and reads internal cron tables. Service role only (used by the check).
+create or replace function public.cron_job_status()
+returns table (
+  job_name         text,
+  schedule         text,
+  command          text,
+  active           boolean,
+  last_run_status  text,
+  last_run_at      timestamptz,
+  last_run_msg     text
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    j.jobname,
+    j.schedule,
+    j.command,
+    j.active,
+    d.status,
+    d.start_time,
+    d.return_message
+  from cron.job j
+  left join lateral (
+    select status, start_time, return_message
+    from cron.job_run_details
+    where jobid = j.jobid
+    order by start_time desc
+    limit 1
+  ) d on true
+  where j.jobname = 'prune-session-revocations';
+$$;
+
+revoke execute on function public.cron_job_status() from public;
+revoke execute on function public.cron_job_status() from anon, authenticated;
+grant execute on function public.cron_job_status() to service_role;
 
 -- ---------------------------------------------------------------------------
 -- SECURITY — automatic sign-out of other devices on password change
