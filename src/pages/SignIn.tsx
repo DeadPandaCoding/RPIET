@@ -110,8 +110,8 @@ export function SignIn() {
       setError('Password is too long (max 128 characters).')
       return
     }
-    if (mode === 'signup' && password.length < 6) {
-      setError('Password must be at least 6 characters.')
+    if (mode === 'signup' && password.length < 8) {
+      setError('Password must be at least 8 characters.')
       return
     }
     setSubmitting(true)
@@ -249,7 +249,7 @@ export function SignIn() {
                         autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder={mode === 'signup' ? 'At least 6 characters' : 'Your password'}
+                        placeholder={mode === 'signup' ? 'At least 8 characters' : 'Your password'}
                         className="pl-9 pr-10"
                       />
                       <button

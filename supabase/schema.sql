@@ -277,6 +277,14 @@ create or replace view public.owner_sessions as
   select id, user_id, created_at, updated_at, user_agent, ip
   from auth.sessions;
 
+-- Postgres grants PUBLIC select on new views by default, which would expose
+-- every user's session metadata (ids, user agents, IPs) to anonymous callers
+-- through PostgREST. Lock it down: service role only, exactly like the
+-- revoke_owner_session function below. (Pen-test finding: the view was
+-- world-readable and chained with revoke_owner_session for unauthenticated
+-- session revocation.)
+revoke all on public.owner_sessions from public;
+revoke all on public.owner_sessions from anon, authenticated;
 grant select on public.owner_sessions to service_role;
 
 -- Real-time revocation broadcast. Rows are only ever INSERTed (inside
@@ -361,6 +369,15 @@ as $$
   where exists (select 1 from killed);
 $$;
 
+-- Clients must never call this directly: it is security-definer and deletes
+-- sessions + refresh tokens. The /api/sessions function calls it with the
+-- service key AFTER verifying the caller's token server-side. Postgres grants
+-- PUBLIC execute on new functions by default, so without the revokes below
+-- an anonymous visitor could sign out ANY user whose session id they know
+-- (pen-test finding — confirmed exploitable; chained with the owner_sessions
+-- leak for a fully unauthenticated account lockout).
+revoke execute on function public.revoke_owner_session(uuid, uuid) from public;
+revoke execute on function public.revoke_owner_session(uuid, uuid) from anon, authenticated;
 grant execute on function public.revoke_owner_session(uuid, uuid) to service_role;
 
 -- ---------------------------------------------------------------------------

@@ -15,6 +15,9 @@
     <script>
       // Apply the saved theme before the bundle loads to avoid a flash.
       // Mirrors src/lib/prefs.ts (pl.theme) + src/lib/theme.ts (dark class).
+      // NOTE: if you change ANYTHING here (even whitespace or a comment), the
+      // sha256 hash of this script in vercel.json's Content-Security-Policy
+      // must be regenerated or the script will be blocked by the browser.
       ;(function () {
         try {
           var t = localStorage.getItem('pl.theme') || 'system'

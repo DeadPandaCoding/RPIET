@@ -22,8 +22,8 @@ export function ResetPassword() {
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.')
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.')
       return
     }
     if (password.length > 128) {
@@ -84,7 +84,7 @@ export function ResetPassword() {
                   type={show ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
+                  placeholder="At least 8 characters"
                   className="pl-9 pr-10"
                   autoFocus
                 />

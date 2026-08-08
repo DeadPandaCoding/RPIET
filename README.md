@@ -73,6 +73,20 @@ your browser — no setup required. You can wipe or reload demo data anytime in 
    requires **sign-in (Supabase Auth, email + password)**. Every user sees and edits only
    their own data — protected by per-user Row Level Security (`user_id = auth.uid()`).
 
+> **Password policy:** the app requires **8+ characters** for new passwords and resets.
+> For the same minimum to be enforced server-side (signups/resets made outside the app),
+> set it in Supabase → **Authentication → Providers → Email → Minimum password length = 8**.
+
+> **Deployed security headers:** `vercel.json` applies a Content-Security-Policy,
+> `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and a strict
+> Referrer-Policy to the deployed site. The CSP's `script-src` hash is tied to the
+> inline theme script in `index.html` — if you edit that script, regenerate the hash
+> (the comment above the script explains how). The CSP also pins the Supabase project
+> host, so if you switch projects update it in `vercel.json`. One minor effect: legacy
+> external `https://` receipt URLs from very old backups no longer render as images
+> (the CSP only allows the Supabase host, `data:`, and `blob:` images) — the link
+> itself still opens.
+
 > **Already have data?** Rows created before the upgrade have a `NULL user_id` and are
 > invisible until claimed. After creating your account, copy your user id (Settings →
 > Account & Security in the app, or Authentication → Users in Supabase) and run the
