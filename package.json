@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "smoke": "npx tsx test/smoke.ts",
     "test:revocation": "npx tsx test/verify-revocation.ts",
+    "test:revoke-browser": "npx tsx test/verify-revoke-browser.mts",
     "preview": "vite preview",
     "scan:secrets": "node scripts/scan-secrets.mjs",
     "prepare": "node scripts/install-hooks.mjs"
@@ -30,6 +31,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.4",
     "oxlint": "^1.75.0",
+    "puppeteer-core": "^25.5.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "vite": "^8.2.0"

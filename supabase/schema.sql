@@ -342,8 +342,11 @@ as $$
     returning 1
   ),
   tokens as (
+    -- Some GoTrue schema versions (this project's included) store
+    -- auth.refresh_tokens.user_id as text rather than uuid; compare it as
+    -- text so the function runs on either schema variant.
     delete from auth.refresh_tokens
-     where session_id = p_session_id and user_id = p_user_id
+     where session_id = p_session_id and user_id::text = p_user_id::text
   ),
   -- The broadcast rows are only useful for the seconds it takes to deliver
   -- the realtime event, so each revoke also prunes old ones (keeps the table

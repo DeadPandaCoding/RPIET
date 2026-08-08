@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Failure screenshots from the browser-based revoke test
+test/revoke-fail-*.png
+
 # Local env files (secrets) — keep .env.example tracked
 .env
 .env.*

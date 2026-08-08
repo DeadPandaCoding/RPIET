@@ -200,9 +200,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // every revocation in public.session_revocations (owner-only RLS, published
   // to Realtime), so subscribing to INSERTs for our own session id signs a
   // revoked device out the moment the row lands — under a second, no polling.
-  // `{ scope: 'local' }` clears the local session (and emits SIGNED_OUT above)
-  // even when the server call fails, which it will, since the session is
-  // already dead server-side.
+  // The sign-out deliberately does NOT go through sb.auth.signOut(): that
+  // emits SIGNED_OUT to every other tab of the same browser profile via
+  // supabase-js's BroadcastChannel multi-tab sync, which would also sign out
+  // the device that performed the revoke. The server has already killed this
+  // session's refresh tokens, so instead we clear this tab's own token keys
+  // and reload — the app boots to the sign-in screen, and no other tab is
+  // touched. (Tabs with independent sessions keep theirs; a shared
+  // remember-me session stays protected because its server session is dead.)
   useEffect(() => {
     const sb = getSupabase()
     if (!sb || !user) return
@@ -228,7 +233,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
             // Defensive: never sign out based on another session's event.
             const row = payload.new as { session_id?: string } | null
             if (!row || row.session_id !== sid) return
-            void sb.auth.signOut({ scope: 'local' })
+            // Local-only sign-out: clear every supabase token key (auth token,
+            // user blob, PKCE verifiers) from both stores, then reload.
+            for (const store of [window.localStorage, window.sessionStorage]) {
+              for (const key of Object.keys(store)) {
+                if (key.includes('-auth-token')) store.removeItem(key)
+              }
+            }
+            window.location.reload()
           },
         )
         .subscribe()

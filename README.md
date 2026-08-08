@@ -98,4 +98,9 @@ supabase/
 | `npm run preview`| Preview the production build  |
 | `npm run smoke`  | Run the data/reporting smoke tests |
 | `npm run test:revocation` | Verify realtime cross-device sign-out on password change (needs Supabase + a test account) |
+| `npm run test:revoke-browser` | Two-tab browser check of the revoke flow: the revoked tab signs out instantly and the revoking tab stays signed in (needs Chrome, the dev server running with Supabase keys, and a test account) |
 | `npm run scan:secrets` | Scan for accidentally committed secrets |
+
+> **Local dev note:** `vite.config.ts` proxies `/api` to the deployed site
+> (`https://rpiet.vercel.app` by default; override with `DEV_API_TARGET`) so the
+> Devices & Sessions serverless function also works in `npm run dev`.
